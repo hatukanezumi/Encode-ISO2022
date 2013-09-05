@@ -1,0 +1,13 @@
+Changes
+ISO2022/Makefile.PL
+lib/Encode/ISO2022.pm
+lib/Encode/ISO2022/CCS.pod
+lib/Encode/ISO2022/CCS/ISO8859.pm
+lib/Encode/ISO2022/CCS/JISLegacy.pm
+lib/Encode/ISO2022JP2.pm
+Makefile.PL
+MANIFEST			This list of files
+README
+t/Encode-ISO2022.t
+t/pod.t
+ucm/c1-ctrl.ucm

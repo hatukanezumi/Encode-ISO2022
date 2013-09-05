@@ -1,0 +1,121 @@
+=pod
+
+=encoding utf-8
+
+=head1 NAME
+
+Encode::ISO2022::CCS - coded character sets for ISO/IEC 2022 encoding scheme
+
+=head1 SYNOPSIS
+
+FIXME FIXME
+
+=head1 DESCRIPTION
+
+FIXME FIXME
+
+"reg#" column indicates the number of registry in ISO international registry
+of coded character sets [ISO-IR].
+
+=head2 Built-in encodings
+
+  reg# Name                  Description
+  ----------------------------------------------------------------
+    6  ascii                 ANSI X3.4-1986, equivalent to ISO646-IRV
+   -   ascii-ctrl            ISO 6429 control characters (C0)
+   -   c1-ctrl               ISO 6429 control characters (C1)
+  ----------------------------------------------------------------
+
+=head2 L<Encode::ISO2022::CCS::ISO8859>
+
+  reg# Name                  Description
+  ----------------------------------------------------------------
+  100  iso-8859-1-right      ISO/IEC 8859 no. 1, Latin 1
+  101  iso-8859-2-right      ISO/IEC 8859 no. 2, Latin 2
+  109  iso-8859-3-right      ISO/IEC 8859 no. 3, Latin 3
+  110  iso-8859-4-right      ISO/IEC 8859 no. 4, Latin 4
+  144  iso-8859-5-right      ISO/IEC 8859 no. 5, Cyrilic set
+  127  iso-8859-6-right      ISO/IEC 8859 no. 6, Arabic set
+  126  iso-8859-7-right      ISO/IEC 8859 no. 7, Greek set
+  138  iso-8859-8-right      ISO/IEC 8859 no. 8, Hebrew set
+  148  iso-8859-9-right      ISO/IEC 8859 no. 9, Latin 5
+  157  iso-8859-10-right     ISO/IEC 8859 no. 10, Latin 6
+  166  iso-8859-11-right     ISO/IEC 8859 no. 11, Thai set
+  179  iso-8859-13-right     ISO/IEC 8859 no. 13, Latin 7
+  199  iso-8859-14-right     ISO/IEC 8859 no. 14, Latin 8
+  203  iso-8859-15-right     ISO/IEC 8859 no. 15, Latin 9
+  226  iso-8859-16-right     ISO/IEC 8859 no. 16, Latin 10
+  ----------------------------------------------------------------
+
+=head2 L<Encode::ISO2022::CCS::JISLegacy>
+
+  reg# Name                  Description
+  ----------------------------------------------------------------
+   14  jis0201-left          JIS X0201 Latin set, ISO646-JP
+   13  jis0201-right         JIS X0201 katakana set
+   42  jis0208-1978-raw      JIS C6226-1978, 1st rev. of JIS X0208
+  ----------------------------------------------------------------
+
+=head2 Encodings provided by external modules
+
+=head3 L<Encode::CN>
+
+  reg# Name                  Description
+  ----------------------------------------------------------------
+   58  gb2312-raw            GB2312-80
+  none gb12345-raw           GB12345-90
+  165  iso-ir-165            CCITT Chinese set
+  ----------------------------------------------------------------
+
+=head3 L<Encode::HanExtra>
+
+  reg# Name                  Description
+  ----------------------------------------------------------------
+  none cccii                 CCCII
+  171  cns11643-1            CNS 11643 plane 1
+  172  cns11643-2            CNS 11643 plane 2
+  183  cns11643-3            CNS 11643 plane 3
+  184  cns11643-4            CNS 11643 plane 4
+  185  cns11643-5            CNS 11643 plane 5
+  186  cns11643-6            CNS 11643 plane 6
+  187  cns11643-7            CNS 11643 plane 7
+  none cns11643-f            CNS 11643 plane 15 or 8
+  ----------------------------------------------------------------
+
+=head3 L<Encode::ISO2022::CCS::JISX0213>
+
+  reg# Name                  Description
+  ----------------------------------------------------------------
+  228  jisx0213-2000-plane1  JIS X0213:2000 level 3 (plane 1)
+       jisx0213-2000-plane1-ascii
+       jisx0213-2000-plane1-jis
+  233  jisx0213-plane1       JIS X0213:2004 level 3 (plane 1)
+       jisx0213-plane1-ascii
+       jisx0213-plane1-jis
+  229  jisx0213-plane2       JIS X0213:2000/2004 level 4 (plane 2)
+  ----------------------------------------------------------------
+
+=head3 L<Encode::JP>
+
+  reg# Name                  Description
+  ----------------------------------------------------------------
+   87  jis0208-raw           JIS X0208-1983, 2nd rev. of JIS X0208
+  168      ditto             JIS X0208-1990
+  159  jis0212-raw           JIS X0212-1990
+  ----------------------------------------------------------------
+
+=head3 L<Encode::KR>
+
+  reg# Name                  Description
+  ----------------------------------------------------------------
+  149  ksc5601-raw           KS C5601-1987, 1st rev. of KS X 1001
+  ----------------------------------------------------------------
+
+=head1 SEE ALSO
+
+See modules described above for specific CCS.
+
+[ISO/IEC 2022] 
+
+[ISO-IR] International Register of Coded Character Sets to be Used with Escape
+Sequences, L<http://www.itscj.ipsj.or.jp/ISO-IR/>.
