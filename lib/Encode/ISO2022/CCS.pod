@@ -21,15 +21,16 @@ of coded character sets [ISO-IR].
 
   reg# Name                  Description
   ----------------------------------------------------------------
-    6  ascii                 ANSI X3.4-1986, equivalent to ISO646-IRV
+    6  ascii                 ANSI X3.4-1986, equivalent to ISO 646 IRV
    -   ascii-ctrl            ISO 6429 control characters (C0)
    -   c1-ctrl               ISO 6429 control characters (C1)
   ----------------------------------------------------------------
 
-=head2 L<Encode::ISO2022::CCS::ISO8859>
+=head2 L<Encode::ISOIRSingle>
 
   reg# Name                  Description
   ----------------------------------------------------------------
+   14  iso646-jp             JIS X 0201 Latin set, ISO/IEC 646 JP
   100  iso-8859-1-right      ISO/IEC 8859 no. 1, Latin 1
   101  iso-8859-2-right      ISO/IEC 8859 no. 2, Latin 2
   109  iso-8859-3-right      ISO/IEC 8859 no. 3, Latin 3
@@ -47,13 +48,12 @@ of coded character sets [ISO-IR].
   226  iso-8859-16-right     ISO/IEC 8859 no. 16, Latin 10
   ----------------------------------------------------------------
 
-=head2 L<Encode::ISO2022::CCS::JISLegacy>
+=head2 L<Encode::JISLegacy>
 
   reg# Name                  Description
   ----------------------------------------------------------------
-   14  jis0201-left          JIS X0201 Latin set, ISO646-JP
-   13  jis0201-right         JIS X0201 katakana set
-   42  jis0208-1978-raw      JIS C6226-1978, 1st rev. of JIS X0208
+   13  jis0201-right         JIS X 0201 katakana set
+   42  jis0208-1978-raw      JIS C 6226-1978, 1st rev. of JIS X 0208
   ----------------------------------------------------------------
 
 =head2 Encodings provided by external modules
@@ -82,26 +82,26 @@ of coded character sets [ISO-IR].
   none cns11643-f            CNS 11643 plane 15 or 8
   ----------------------------------------------------------------
 
-=head3 L<Encode::ISO2022::CCS::JISX0213>
+=head3 L<Encode::JISX0213::CCS>
 
   reg# Name                  Description
   ----------------------------------------------------------------
-  228  jisx0213-2000-plane1  JIS X0213:2000 level 3 (plane 1)
+  228  jisx0213-2000-plane1  JIS X 0213:2000 level 3 (plane 1)
        jisx0213-2000-plane1-ascii
        jisx0213-2000-plane1-jis
-  233  jisx0213-plane1       JIS X0213:2004 level 3 (plane 1)
+  233  jisx0213-plane1       JIS X 0213:2004 level 3 (plane 1)
        jisx0213-plane1-ascii
        jisx0213-plane1-jis
-  229  jisx0213-plane2       JIS X0213:2000/2004 level 4 (plane 2)
+  229  jisx0213-plane2       JIS X 0213:2000/2004 level 4 (plane 2)
   ----------------------------------------------------------------
 
 =head3 L<Encode::JP>
 
   reg# Name                  Description
   ----------------------------------------------------------------
-   87  jis0208-raw           JIS X0208-1983, 2nd rev. of JIS X0208
-  168      ditto             JIS X0208-1990
-  159  jis0212-raw           JIS X0212-1990
+   87  jis0208-raw           JIS X 0208-1983, 2nd rev. of JIS X 0208
+  168      ditto             JIS X 0208-1990, 3rd rev. of JIS X 0208
+  159  jis0212-raw           JIS X 0212-1990
   ----------------------------------------------------------------
 
 =head3 L<Encode::KR>

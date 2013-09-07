@@ -5,8 +5,8 @@ use warnings;
 use base qw(Encode::ISO2022);
 our $VERSION = '0.01';
 
-use Encode::ISO2022::CCS::ISO8859;
-use Encode::ISO2022::CCS::JISLegacy;
+use Encode::ISOIRSingle;
+use Encode::JISLegacy;
 use Encode::CN;
 use Encode::KR;
 
@@ -14,51 +14,61 @@ Encode::define_alias(qr/\biso-?2022-?jp-?2$/i => '"iso-2022-jp-2"');
 $Encode::Encoding{'iso-2022-jp-2'} = bless {
     'CCS' => [
 	{
-	    desig => "\e\x28\x42",
+	    desig_init => 1,
+	    desig_seq => "\e\x28\x42",
+	    desig_to => 'g0',
 	    encoding => $Encode::Encoding{'ascii'},
 	},
 	{
-	    desig => "\e\x2E\x41",
-	    encoding => $Encode::Encoding{'iso-8859-1-right'},
-	    ss => "\e\x4E",
-	},
-	{
-	    desig => "\e\x2E\x46",
-	    encoding => $Encode::Encoding{'iso-8859-7-right'},
-	    ss => "\e\x4E",
-	},
-	{
-	    desig => "\e\x24\x42",
+	    desig_seq => "\e\x24\x42",
+	    desig_to => 'g0',
 	    encoding => $Encode::Encoding{'jis0208-raw'},
 	    bytes => 2,
 	},
 	{
-	    desig => "\e\x24\x41",
+	    desig_seq => "\e\x24\x41",
+	    desig_to => 'g0',
 	    encoding => $Encode::Encoding{'gb2312-raw'},
 	    bytes => 2,
 	},
 	{
-	    desig => "\e\x24\x28\x43",
+	    desig_seq => "\e\x24\x28\x43",
+	    desig_to => 'g0',
 	    encoding => $Encode::Encoding{'ksc5601-raw'},
 	    bytes => 2,
 	},
-	# Unrecommended encodings.
+	# Secondary encodings.
 	{
-	    desig => "\e\x28\x4A",
-	    encoding => $Encode::Encoding{'jis0201-left'},
+	    desig_seq => "\e\x28\x4A",
+	    desig_to => 'g0',
+	    encoding => $Encode::Encoding{'iso646-jp'},
+	},
+	{
+	    desig_seq => "\e\x2E\x41",
+	    desig_to => 'g2',
+	    encoding => $Encode::Encoding{'iso-8859-1-right'},
+	    ss => "\e\x4E",
+	},
+	{
+	    desig_seq => "\e\x2E\x46",
+	    desig_to => 'g2',
+	    encoding => $Encode::Encoding{'iso-8859-7-right'},
+	    ss => "\e\x4E",
 	},
 	{
 	    bytes => 2,
-	    desig => "\e\x24\x28\x44",
+	    desig_seq => "\e\x24\x28\x44",
+	    desig_to => 'g0',
 	    encoding => $Encode::Encoding{'jis0212-raw'},
 	},
 	{
 	    bytes => 2,
-	    desig => "\e\x24\x40",
+	    desig_seq => "\e\x24\x40",
+	    desig_to => 'g0',
 	    encoding => $Encode::Encoding{'jis0208-1978-raw'},
 	},
     ],
-    Init => "\e\x28\x42", # ASCII is designated to G0 and invoked to GL.
+    LineInit => 1,
     Name => 'iso-2022-jp-2',
     SubChar => "\x{3013}", 
 } => __PACKAGE__;

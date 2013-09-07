@@ -1,7 +1,7 @@
 #-*- perl -*-
 #-*- coding: us-ascii -*-
 
-package Encode::ISO2022::CCS::ISO8859;
+package Encode::ISOIRSingle;
 
 use strict;
 use warnings;
@@ -10,6 +10,8 @@ our $VERSION = '0.01';
 
 use Encode qw(FB_QUIET);
 use Encode::Byte;
+use XSLoader;
+XSLoader::load(__PACKAGE__, $VERSION);
 
 foreach my $n (1..11, 13..16) {
     $Encode::Encoding{"iso-8859-$n-right"} = bless {
@@ -52,7 +54,7 @@ __END__
 
 =head1 NAME
 
-Encode::ISO2022::CCS::ISO8859 - coded character sets for ISO/IEC 8859 series
+Encode::ISOIRSingle - ISO-IR single byte coded charcter sets
 
 =head1 DESCRIPTION
 

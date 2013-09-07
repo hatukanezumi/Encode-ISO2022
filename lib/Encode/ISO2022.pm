@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use base qw(Encode::Encoding);
 
-our $VERSION = '0.0_01';
+our $VERSION = '0.0_02';
 
 use Carp qw(carp croak);
 use Encode qw(:fallback_all);
@@ -21,12 +21,178 @@ my $err_decode_nomap = '%s "\x%*v02X" does not map to Unicode';
 sub decode {
     my ($self, $str, $chk) = @_;
 
+    my $chk_sub;
+    my $utf8 = '';
+    my $errChar;
+
+    if (ref $chk eq 'CODE') {
+	$chk_sub = $chk;
+	$chk = PERLQQ | LEAVE_SRC;
+    }
+
+    delete $self->{State};
+    $self->init_decoder;
+
+    pos($str) = 0;
+    my $chunk = '';
+  CHUNKS:
+    while (
+	$str =~ m{
+	    \G
+	    (
+		( # designation (FIXME)
+		    \e\x24?[\x28-\x2B\x2D-\x2F][\x20-\x2F]*[\x40-\x7E] |
+		    \e\x24[\x40-\x42] |
+		) |
+		( # locking shift
+		    \x0E|\x0F|\e[\x6E\x6F\x7C\x7D\x7E]
+		) |
+	    )
+	    (
+		( # single shift 2
+		    \x8E|\e\x4E
+		) |
+		( # single shift 3
+		    \x8F|\e\x4F
+		) |
+	    )
+	    (
+		[^\x0E\x0F\e\x8E\x8F]*
+	    )
+	}gcx
+    ) {
+	my ($func, $desig_seq, $ls, $ss, $ss2, $ss3, $chunk) =
+	    ($1, $2, $3, $4, $5, $6, $7);
+
+	if (length $desig_seq) {
+	    unless ($self->designate_dec($desig_seq)) {
+		;
+	    }
+	} elsif (length $ls) {
+	    unless ($self->invoke_dec($ls)) {
+		;
+	    }
+	}
+
+	if (length $ss2) {
+	    ;
+	} elsif (length $ss3) {
+	    ;
+	}
+
+	while (length $chunk) {
+	    my $conv;
+
+	    $conv = $self->_decode($chunk);
+	    if (defined $conv) {
+		$utf8 .= $conv;
+
+		if ($conv =~ /[\r\n]/ and $self->{LineInit}) {
+		    delete $self->{State};
+		    $self->init_decoder;
+		}
+		next;
+	    }
+
+	    $errChar = substr($chunk, 0, 1); # FIXME
+	    if ($chk & DIE_ON_ERR) {
+		croak sprintf $err_decode_nomap, $self->name, '\x', $errChar;
+	    }
+	    if ($chk & WARN_ON_ERR) {
+		carp sprintf $err_decode_nomap, $self->name, '\x', $errChar;
+	    }
+	    if ($chk & RETURN_ON_ERR) {
+		last CHUNKS;
+	    }
+
+	    substr($chunk, 0, 1) = ''; # FIXME
+
+	    if ($chk_sub) {
+		$conv = $chk_sub->($errChar);
+		$conv = Encode::decode_utf8($conv)
+		    unless Encode::is_utf8($conv);
+	    } elsif ($chk & PERLQQ) {
+		$conv = sprintf '\x%*v02X', '\x', $errChar;
+	    } else {
+		$conv = "\x{FFFD}";
+	    }
+	    $utf8 .= $conv;
+	}
+    }
+    pos($str) -= length($chunk);
+    $_[1] = substr($str, pos $str) unless $chk & LEAVE_SRC;
+
+    return $utf8;
 }
 
-my $ccs_ascii = {
-    desig => "\e\x28\x42",
-    encoding => $Encode::Encoding{'ascii'},
-};
+sub _decode {
+    my ($self, $chunk) = @_;
+
+    foreach my $ccs (@{$self->{State}->{gl} || []}) {
+	next unless $ccs->{encoding};
+
+	my $conv = $ccs->{encoding}->decode($chunk, FB_QUIET);
+	if (defined $conv and length $conv) {
+	    $_[1] = $chunk;
+	    return $conv;
+        }
+    }
+
+    $chunk =~ tr/\x00-\x7F\x80-\xFF/\x80-\xFF\x00-\x7F/;
+    foreach my $ccs (@{$self->{State}->{gr} || []}) {
+	my $conv = $ccs->{encoding}->decode($chunk, FB_QUIET);
+	if (defined $conv and length $conv) {
+	    $chunk =~ tr/\x00-\x7F\x80-\xFF/\x80-\xFF\x00-\x7F/;
+	    $_[1] = $chunk;
+	    return $conv;
+	}
+    }
+    return undef;
+}
+
+sub init_decoder {
+    my $self = shift;
+
+    foreach my $ccs (grep { $_->{desig_init} } @{$self->{CCS} || []}) {
+	my $g = _parse_desig($ccs->{desig_seq});
+	$self->{State}->{$g} = [$ccs];
+    }
+}
+
+sub designate_dec {
+    my ($self, $desig_seq) = @_;
+
+    my $g = _parse_desig($desig_seq);
+    return undef unless defined $g;
+
+    my $ccs = 
+	[grep {
+	    $_->{desig_seq} and $_->{desig_seq} eq $desig_seq
+	 } @{$self->{CCS} || []}];
+    $self->{State}->{$g} = $ccs;
+    unless ($ccs->[0]->{ls} or $ccs->[0]->{ss}) {
+	if ($ccs->[0]->{gr}) {
+	    $self->{State}->{gr} = $ccs;
+	} else {
+	    $self->{State}->{gl} = $ccs;
+	}
+    }
+}
+
+sub invoke_dec {
+    my ($self, $inv) = @_;
+
+    my ($g, $gg) = _parse_inv($inv);
+    return undef unless defined $g;
+
+    $self->{State}->{$gg} = $self->{State}->{$g};
+}
+
+sub _parse_inv {
+    my $inv = shift;
+
+    ;
+}
 
 sub encode {
     my ($self, $utf8, $chk) = @_;
@@ -41,7 +207,8 @@ sub encode {
 	$chk = PERLQQ | LEAVE_SRC;
     }
 
-    $self->init_state unless $self->{State};
+    delete $self->{State};
+    $self->init_encoder;
 
     while (length $utf8) {
 	my $conv;
@@ -49,12 +216,16 @@ sub encode {
 	$conv = $self->_encode($utf8);
 	if (defined $conv) {
 	    $str .= $conv;
+
+	    if ($conv =~ /[\r\n]/ and $self->{LineInit}) {
+		delete $self->{State};
+		$self->init_encoder;
+	    }
 	    next;
 	}
 
 	$errChar = substr($utf8, 0, 1);
 	if ($chk & DIE_ON_ERR) {
-	    $self->init_state;
 	    croak sprintf $err_encode_nomap, ord $errChar, $self->name;
 	}
 	if ($chk & WARN_ON_ERR) {
@@ -85,8 +256,7 @@ sub encode {
     $_[1] = $utf8 unless $chk & LEAVE_SRC;
 
     if (length $str) {
-	$str .= $self->designate($ccs_ascii);
-	$self->init_state;
+	$str .= $self->init_encoder;
     }
     return $str;
 }
@@ -104,56 +274,70 @@ sub _encode {
     return undef;
 }
 
-sub init_state {
+sub init_encoder {
     my $self = shift;
 
-    delete $self->{Status};
+    my $ret = '';
+    foreach my $ccs (grep { $_->{desig_init} } @{$self->{CCS} || []}) {
+	$ret .= $self->designate($ccs);
+    }
+    return $ret;
 }
 
 sub designate {
     my ($self, $ccs) = @_;
 
-    my $desig = $ccs->{desig};
-    my $g;
-    unless ($desig) {
-	return '';
-    } elsif (index($desig, "\e\x28") == 0) {
-	$g = 'g0';
-    } elsif (index($desig, "\e\x29") == 0) {
-	$g = 'g1';
-    } elsif (index($desig, "\e\x2A") == 0) {
-	$g = 'g2';
-    } elsif (index($desig, "\e\x2B") == 0) {
-	$g = 'g3';
-    } elsif (index($desig, "\e\x2D") == 0) {
-	$g = 'g1';
-    } elsif (index($desig, "\e\x2E") == 0) {
-	$g = 'g2';
-    } elsif (index($desig, "\e\x2F") == 0) {
-	$g = 'g3';
-    } elsif ($desig =~ /^\e\x24[\x40-\x42]/) {
-	$g = 'g0';
-    } elsif (index($desig, "\e\x24\x28") == 0) {
-	$g = 'g0';
-    } elsif (index($desig, "\e\x24\x29") == 0) {
-	$g = 'g1';
-    } elsif (index($desig, "\e\x24\x2A") == 0) {
-	$g = 'g2';
-    } elsif (index($desig, "\e\x24\x2B") == 0) {
-	$g = 'g3';
-    } elsif (index($desig, "\e\x24\x2D") == 0) {
-	$g = 'g1';
-    } elsif (index($desig, "\e\x24\x2E") == 0) {
-	$g = 'g2';
-    } elsif (index($desig, "\e\x24\x2F") == 0) {
-	$g = 'g3';
-    } else {
-	die sprintf 'Unknown designation sequence: \x%*vX', '\x', $desig;
-    }
+    my $desig_seq = $ccs->{desig_seq};
+
+    my $g = _parse_desig($desig_seq);
+    die sprintf 'Unknown designation sequence: \x%*vX', '\x', $desig_seq
+	unless defined $g;
 
     return ''
-	if $self->{Status}->{$g} and $self->{Status}->{$g} eq $desig;
-    return $self->{Status}->{$g} = $desig;
+	if $self->{State}->{$g} and $self->{State}->{$g} eq $desig_seq;
+    return $self->{State}->{$g} = $desig_seq;
+}
+
+sub _parse_desig {
+    my $desig_seq = shift;
+
+    my $g;
+    unless ($desig_seq) {
+	return '';
+    } elsif (index($desig_seq, "\e\x28") == 0) {
+	$g = 'g0';
+    } elsif (index($desig_seq, "\e\x29") == 0) {
+	$g = 'g1';
+    } elsif (index($desig_seq, "\e\x2A") == 0) {
+	$g = 'g2';
+    } elsif (index($desig_seq, "\e\x2B") == 0) {
+	$g = 'g3';
+    } elsif (index($desig_seq, "\e\x2D") == 0) {
+	$g = 'g1';
+    } elsif (index($desig_seq, "\e\x2E") == 0) {
+	$g = 'g2';
+    } elsif (index($desig_seq, "\e\x2F") == 0) {
+	$g = 'g3';
+    } elsif ($desig_seq =~ /^\e\x24[\x40-\x42]/) {
+	$g = 'g0';
+    } elsif (index($desig_seq, "\e\x24\x28") == 0) {
+	$g = 'g0';
+    } elsif (index($desig_seq, "\e\x24\x29") == 0) {
+	$g = 'g1';
+    } elsif (index($desig_seq, "\e\x24\x2A") == 0) {
+	$g = 'g2';
+    } elsif (index($desig_seq, "\e\x24\x2B") == 0) {
+	$g = 'g3';
+    } elsif (index($desig_seq, "\e\x24\x2D") == 0) {
+	$g = 'g1';
+    } elsif (index($desig_seq, "\e\x24\x2E") == 0) {
+	$g = 'g2';
+    } elsif (index($desig_seq, "\e\x24\x2F") == 0) {
+	$g = 'g3';
+    } else {
+	return undef;
+    }
+    return $g;
 }
 
 sub invoke {
@@ -179,8 +363,8 @@ sub invoke {
 	return $out;	
     } elsif ($ccs->{ls}) {
 	return $str
-	    if $self->{Status}->{$g} eq $ccs->{ls};
-	return ($self->{Status}->{$g} = $ccs->{ls}) . $str;
+	    if $self->{State}->{$g} eq $ccs->{ls};
+	return ($self->{State}->{$g} = $ccs->{ls}) . $str;
     } else {
 	return $str;
     }
@@ -237,9 +421,14 @@ Namely, they must be stateless and fixed-length conversion over 94^n or 96^n
 code tables.
 L<Encode::ISO2022::CCS> lists available CCSs.
 
-=item desig => STRING
+=item desig_seq => STRING
 
 Escape sequence to designate this CCS, if it should be designated explicitly.
+
+=item desig_init => BOOLEAN
+
+If this flag is set, this CCS will be designated at beginning of coversion
+implicitly, and at end of conversion explicitly.
 
 =item gr => BOOLEAN
 
@@ -258,9 +447,10 @@ character, if it should be invoked explicitly.
 
 =back
 
-=item Init => SEQUENCE
+=item LineInit => BOOLEAN
 
-FIXME FIXME
+If it is true, designation and invokation states will be initialized at
+beginning of lines.
 
 =item SubChar => STRING
 

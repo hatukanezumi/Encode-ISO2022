@@ -1,7 +1,7 @@
 #-*- perl -*-
 #-*- coding: us-ascii -*-
 
-package Encode::ISO2022::CCS::JISLegacy;
+package Encode::JISLegacy;
 
 use strict;
 use warnings;
@@ -16,11 +16,6 @@ use Encode::JP;
 $Encode::Encoding{'jis0208-1978-raw'} = bless {
     Name => 'jis0208-1978-raw',
     encoding => $Encode::Encoding{'jis0208-raw'},
-} => __PACKAGE__;
-# JIS X0201 Latin set, ISO/IEC 646 JP.
-$Encode::Encoding{'jis0201-left'} = bless {
-    Name => 'jis0201-left',
-    encoding => $Encode::Encoding{'jis0201-raw'},
 } => __PACKAGE__;
 # JIS X0201 katakana set.
 $Encode::Encoding{'jis0201-right'} = bless {
@@ -55,11 +50,6 @@ sub encode {
     if ($self->name eq 'jis0208-1978-raw') {
 	$conv = $self->{encoding}->encode($utf8, FB_QUIET);
 	$conv =~ s{([\x21-\x7E]{2})}{$swap1978{$1} || $1}eg;
-    } elsif ($self->name eq 'jis0201-left') {
-	if ($utf8 =~ s/([\x00-\x1F\x80-\x9F\x{FF61}-\x{FF9F}].*)$//s) {
-	    $residue = $1;
-	}
-	$conv = $self->{encoding}->encode($utf8, FB_QUIET);
     } elsif ($self->name eq 'jis0201-right') {
 	if ($utf8 =~ s/([^\x{FF61}-\x{FF9F}].*)$//s) {
 	    $residue = $1;
@@ -81,11 +71,6 @@ sub decode {
 	$str =~ s{([\x21-\x7E]{2})}{$swap1978{$1} || $1}eg;
 	$conv = $self->{encoding}->decode($str, FB_QUIET);
 	$str =~ s{([\x21-\x7E]{2})}{$swap1978{$1} || $1}eg;
-    } elsif ($self->name eq 'jis0201-left') {
-	if ($str =~ s/([^\x20-\x7F].*)$//s) {
-	    $residue = $1;
-	}
-	$conv = $self->{encoding}->decode($str, FB_QUIET);
     } elsif ($self->name eq 'jis0201-right') {
 	if ($str =~ s/([^\x21-\x5F].*)$//s) {
 	    $residue = $1;
@@ -104,7 +89,7 @@ __END__
 
 =head1 NAME
 
-Encode::ISO2022::CCS::JISLegacy - coded character sets for legacy JIS
+Encode::JISLegacy - coded character sets for legacy JIS
 
 =head1 DESCRIPTION
 

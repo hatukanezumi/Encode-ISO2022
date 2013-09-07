@@ -15,7 +15,7 @@ WriteMakefile(
         'Test::More'          => 0,
     },
     PREREQ_PM     => {
-	'Encode'     => '1.41',
+	'Encode'     => '2.10',
     },
     META_MERGE    => {
 	resources     => {
