@@ -1,7 +1,7 @@
 #
 # $Id$
 #
-<code_set_name>  "iso646-jp"
+<code_set_name>  "iso-646-jp"
 <code_set_alias> "iso-ir-14"
 <mb_cur_min> 1
 <mb_cur_max> 1

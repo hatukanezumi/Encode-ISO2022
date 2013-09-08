@@ -2,7 +2,8 @@ package Encode::ISO2022JP2;
 
 use strict;
 use warnings;
-use base qw(Encode::ISO2022);
+use Encode::ISO2022;
+our @ISA = qw/Encode::ISO2022/;
 our $VERSION = '0.01';
 
 use Encode::ISOIRSingle;
@@ -15,56 +16,42 @@ $Encode::Encoding{'iso-2022-jp-2'} = bless {
     'CCS' => [
 	{
 	    desig_init => 1,
-	    desig_seq => "\e\x28\x42",
-	    desig_to => 'g0',
+	    designates("\e\x28\x42" => 'g0'),
 	    encoding => $Encode::Encoding{'ascii'},
 	},
 	{
-	    desig_seq => "\e\x24\x42",
-	    desig_to => 'g0',
+	    designates("\e\x24\x42" => 'g0', 2),
 	    encoding => $Encode::Encoding{'jis0208-raw'},
-	    bytes => 2,
 	},
 	{
-	    desig_seq => "\e\x24\x41",
-	    desig_to => 'g0',
+	    designates("\e\x24\x41" => 'g0', 2),
 	    encoding => $Encode::Encoding{'gb2312-raw'},
-	    bytes => 2,
 	},
 	{
-	    desig_seq => "\e\x24\x28\x43",
-	    desig_to => 'g0',
+	    designates("\e\x24\x28\x43" => 'g0', 2),
 	    encoding => $Encode::Encoding{'ksc5601-raw'},
-	    bytes => 2,
 	},
 	# Secondary encodings.
 	{
-	    desig_seq => "\e\x28\x4A",
-	    desig_to => 'g0',
-	    encoding => $Encode::Encoding{'iso646-jp'},
+	    designates("\e\x28\x4A" => 'g0'),
+	    encoding => $Encode::Encoding{'iso-646-jp'},
 	},
 	{
-	    desig_seq => "\e\x2E\x41",
-	    desig_to => 'g2',
+	    designates("\e\x2E\x41" => 'g2'),
 	    encoding => $Encode::Encoding{'iso-8859-1-right'},
 	    ss => "\e\x4E",
 	},
 	{
-	    desig_seq => "\e\x2E\x46",
-	    desig_to => 'g2',
+	    designates("\e\x2E\x46" => 'g2'),
 	    encoding => $Encode::Encoding{'iso-8859-7-right'},
 	    ss => "\e\x4E",
 	},
 	{
-	    bytes => 2,
-	    desig_seq => "\e\x24\x28\x44",
-	    desig_to => 'g0',
+	    designates("\e\x24\x28\x44" => 'g0', 2),
 	    encoding => $Encode::Encoding{'jis0212-raw'},
 	},
 	{
-	    bytes => 2,
-	    desig_seq => "\e\x24\x40",
-	    desig_to => 'g0',
+	    designates("\e\x24\x40" => 'g0', 2),
 	    encoding => $Encode::Encoding{'jis0208-1978-raw'},
 	},
     ],
@@ -81,7 +68,7 @@ sub perlio_ok { 0 }
 __END__
 =head1 NAME
 
-Encode::ISO2022JP2 - iso-2022-jp-2, extended iso-2022-jp
+Encode::ISO2022JP2 - iso-2022-jp-2, extended iso-2022-jp character set
 
 =head1 SYNOPSIS
 
@@ -111,7 +98,7 @@ because it keeps designation state beyond lines.
 =head1 SEE ALSO
 
 RFC 1554
-ISO-2022-JP-2: Multilingual Extension of ISO-2022-JP.
+I<ISO-2022-JP-2: Multilingual Extension of ISO-2022-JP>.
 
 L<Encode>, L<Encode::JP>, L<Encode::JISX0213>.
 

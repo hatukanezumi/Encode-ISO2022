@@ -30,7 +30,7 @@ of coded character sets [ISO-IR].
 
   reg# Name                  Description
   ----------------------------------------------------------------
-   14  iso646-jp             JIS X 0201 Latin set, ISO/IEC 646 JP
+   14  iso-646-jp            JIS X 0201 Latin set, ISO/IEC 646 JP
   100  iso-8859-1-right      ISO/IEC 8859 no. 1, Latin 1
   101  iso-8859-2-right      ISO/IEC 8859 no. 2, Latin 2
   109  iso-8859-3-right      ISO/IEC 8859 no. 3, Latin 3
@@ -115,7 +115,10 @@ of coded character sets [ISO-IR].
 
 See modules described above for specific CCS.
 
-[ISO/IEC 2022] 
+ISO-IR
+I<International Register of Coded Character Sets to be Used with Escape
+Sequences>, L<http://www.itscj.ipsj.or.jp/ISO-IR/>.
 
-[ISO-IR] International Register of Coded Character Sets to be Used with Escape
-Sequences, L<http://www.itscj.ipsj.or.jp/ISO-IR/>.
+L<Encode>, L<Encode::ISO2022>.
+
+=cut

@@ -6,9 +6,9 @@ package Encode::ISO2022;
 use 5.007003;
 use strict;
 use warnings;
-use base qw(Encode::Encoding);
-
-our $VERSION = '0.0_02';
+use base qw(Encode::Encoding Exporter);
+our @EXPORT = qw/designates/;
+our $VERSION = '0.0_03';
 
 use Carp qw(carp croak);
 use Encode qw(:fallback_all);
@@ -17,6 +17,15 @@ XSLoader::load(__PACKAGE__, $VERSION);
 
 my $err_encode_nomap = '"\x{%04X}" does not map to %s';
 my $err_decode_nomap = '%s "\x%*v02X" does not map to Unicode';
+
+# Helper functions
+sub designates {
+    my ($desig_seq, $g, $bytes) = @_;
+    $bytes ||= 1;
+    return (desig_seq => $desig_seq, desig_to => $g, bytes => $bytes);
+}
+
+# decode method
 
 sub decode {
     my ($self, $str, $chk) = @_;
@@ -66,24 +75,18 @@ sub decode {
 
 	if (length $desig_seq) {
 	    unless ($self->designate_dec($desig_seq)) {
-		;
+		#XXX;
 	    }
 	} elsif (length $ls) {
 	    unless ($self->invoke_dec($ls)) {
-		;
+		#XXX;
 	    }
 	}
 
-	if (length $ss2) {
-	    ;
-	} elsif (length $ss3) {
-	    ;
-	}
-
 	while (length $chunk) {
-	    my $conv;
+	    my ($conv, $bytes);
 
-	    $conv = $self->_decode($chunk);
+	    ($conv, $bytes) = $self->_decode($chunk, $ss2, $ss3);
 	    if (defined $conv) {
 		$utf8 .= $conv;
 
@@ -94,7 +97,7 @@ sub decode {
 		next;
 	    }
 
-	    $errChar = substr($chunk, 0, 1); # FIXME
+	    $errChar = substr($chunk, 0, $bytes || 1);
 	    if ($chk & DIE_ON_ERR) {
 		croak sprintf $err_decode_nomap, $self->name, '\x', $errChar;
 	    }
@@ -105,7 +108,7 @@ sub decode {
 		last CHUNKS;
 	    }
 
-	    substr($chunk, 0, 1) = ''; # FIXME
+	    substr($chunk, 0, $bytes || 1) = '';
 
 	    if ($chk_sub) {
 		$conv = $chk_sub->($errChar);
@@ -126,55 +129,91 @@ sub decode {
 }
 
 sub _decode {
-    my ($self, $chunk) = @_;
+    my ($self, $chunk, $ss2, $ss3) = @_;
 
-    foreach my $ccs (@{$self->{State}->{gl} || []}) {
-	next unless $ccs->{encoding};
+    my @ccs;
+    my $conv;
+    my $bytes_min;
 
-	my $conv = $ccs->{encoding}->decode($chunk, FB_QUIET);
+    if ($ss2) {
+	@ccs = @{$self->{State}->{g2} || []};
+    } elsif ($ss3) {
+	@ccs = @{$self->{State}->{g3} || []};
+    } else {
+	@ccs = (
+	    grep(
+		{ not ($_->{desig_to} or $_->{ls} or $_->{ss}) }
+		@{$self->{CCS} || []}
+	    ),
+	    @{$self->{State}->{gl} || []},
+	    @{$self->{State}->{gr} || []}
+	);
+    }
+
+    foreach my $ccs (@ccs) {
+	next unless $ccs and $ccs->{encoding}; #FIXME
+
+	my $residue;
+	if ($ss2 or $ss3) {
+	    $residue = substr($chunk, $ccs->{bytes} || 1);
+	    $chunk = substr($chunk, 0, $ccs->{bytes} || 1);
+	} else {
+	    $residue = '';
+	}
+
+	if ($ccs->{gr}) {
+	    unless ($chunk =~ /^\xA0-\xFF/) {
+		$chunk .= $residue;
+		next;
+	    }
+	    $chunk =~ tr/\x20-\x7F\xA0-\xFF/\xA0-\xFF\x20-\x7F/;
+	    $conv = $ccs->{encoding}->decode($chunk, FB_QUIET);
+	    $chunk =~ tr/\x20-\x7F\xA0-\xFF/\xA0-\xFF\x20-\x7F/;
+	} else {
+	    $conv = $ccs->{encoding}->decode($chunk, FB_QUIET);
+	}
+	$bytes_min = $ccs->{bytes}
+	    if $ccs->{bytes} and
+	    (not defined $bytes_min or $ccs->{bytes} < $bytes_min);
+
+	$chunk .= $residue;
+
 	if (defined $conv and length $conv) {
 	    $_[1] = $chunk;
+	    $_[2] = $_[3] = undef;
 	    return $conv;
         }
     }
-
-    $chunk =~ tr/\x00-\x7F\x80-\xFF/\x80-\xFF\x00-\x7F/;
-    foreach my $ccs (@{$self->{State}->{gr} || []}) {
-	my $conv = $ccs->{encoding}->decode($chunk, FB_QUIET);
-	if (defined $conv and length $conv) {
-	    $chunk =~ tr/\x00-\x7F\x80-\xFF/\x80-\xFF\x00-\x7F/;
-	    $_[1] = $chunk;
-	    return $conv;
-	}
-    }
-    return undef;
+    $_[2] = $_[3] = undef;
+    return (undef, $bytes_min);
 }
 
 sub init_decoder {
     my $self = shift;
 
     foreach my $ccs (grep { $_->{desig_init} } @{$self->{CCS} || []}) {
-	my $g = _parse_desig($ccs->{desig_seq});
-	$self->{State}->{$g} = [$ccs];
+	$self->designate_dec($ccs->{desig_seq});
     }
 }
 
 sub designate_dec {
     my ($self, $desig_seq) = @_;
 
-    my $g = _parse_desig($desig_seq);
-    return undef unless defined $g;
+    return undef
+	unless defined $desig_seq and length $desig_seq;
+    my @ccs = grep {
+	$_->{desig_seq} and $_->{desig_seq} eq $desig_seq
+    } @{$self->{CCS} || []};
+    return undef unless @ccs;
+    my $g = $ccs[0]->{desig_to};
+    return undef unless $g;
 
-    my $ccs = 
-	[grep {
-	    $_->{desig_seq} and $_->{desig_seq} eq $desig_seq
-	 } @{$self->{CCS} || []}];
-    $self->{State}->{$g} = $ccs;
-    unless ($ccs->[0]->{ls} or $ccs->[0]->{ss}) {
-	if ($ccs->[0]->{gr}) {
-	    $self->{State}->{gr} = $ccs;
+    $self->{State}->{$g} = [@ccs];
+    unless ($ccs[0]->{ls} or $ccs[0]->{ss}) {
+	if ($ccs[0]->{gr}) {
+	    $self->{State}->{gr} = [@ccs];
 	} else {
-	    $self->{State}->{gl} = $ccs;
+	    $self->{State}->{gl} = [@ccs];
 	}
     }
 }
@@ -193,6 +232,8 @@ sub _parse_inv {
 
     ;
 }
+
+# encode method
 
 sub encode {
     my ($self, $utf8, $chk) = @_;
@@ -265,6 +306,8 @@ sub _encode {
     my ($self, $utf8) = @_;
 
     foreach my $ccs (@{$self->{CCS} || []}) {
+	next unless $ccs and $ccs->{encoding}; #FIXME
+
 	my $conv = $ccs->{encoding}->encode($utf8, FB_QUIET);
 	if (defined $conv and length $conv) {
 	    $_[1] = $utf8;
@@ -288,8 +331,9 @@ sub designate {
     my ($self, $ccs) = @_;
 
     my $desig_seq = $ccs->{desig_seq};
+    return '' unless $desig_seq;
 
-    my $g = _parse_desig($desig_seq);
+    my $g = $ccs->{desig_to};
     die sprintf 'Unknown designation sequence: \x%*vX', '\x', $desig_seq
 	unless defined $g;
 
@@ -380,7 +424,9 @@ Encode::ISO2022 - ISO/IEC 2022 character encoding scheme
 =head1 SYNOPSIS
 
   package FooEncoding;
-  use base 'Encode::ISO2022';
+  use Encode::ISO2022;
+  our @ISA = qw(Encode::ISO2022);
+  
   $Encode::Encoding{'foo-encoding'} = bless {
     Name => 'foo-encoding',
     CCS => [ {...CCS #1...}, {...CCS #2...}, ....]
@@ -406,10 +452,22 @@ Each item is a hash reference containing following items.
 
 =over 4
 
-=item bytes => NUMBER
+=item bytes => BYTES
 
 Number of bytes to represent each character.
 Default is 1.
+
+=item designates( STRING => G, [ BYTES ] )
+
+Defines escape sequence to designate this CCS,
+if it should be designated explicitly.
+
+Note that designates() function will be exported.
+
+=item desig_init => BOOLEAN
+
+If this flag is set, this CCS will be designated at beginning of coversion
+implicitly, and at end of conversion explicitly.
 
 =item encoding => ENCODING
 
@@ -421,19 +479,9 @@ Namely, they must be stateless and fixed-length conversion over 94^n or 96^n
 code tables.
 L<Encode::ISO2022::CCS> lists available CCSs.
 
-=item desig_seq => STRING
-
-Escape sequence to designate this CCS, if it should be designated explicitly.
-
-=item desig_init => BOOLEAN
-
-If this flag is set, this CCS will be designated at beginning of coversion
-implicitly, and at end of conversion explicitly.
-
 =item gr => BOOLEAN
 
 If true value is set, each character will be invoked to GR.
-Otherwise it will be invoked to GL.
 
 =item ls => STRING
 
@@ -464,6 +512,9 @@ the source of L<Encode::ISO2022JP2> may be an example.
 FIXME FIXME
 
 =head1 SEE ALSO
+
+ISO/IEC 2022
+I<Information technology - Character code structure and extension techniques>.
 
 L<Encode>, L<Encode::ISO2022::CCS>.
 
