@@ -9,7 +9,6 @@ use warnings;
 use base qw(Encode::Encoding);
 our $VERSION = '0.01';
 
-use Encode qw(FB_QUIET);
 use Encode::JP;
 
 # JIS C6226-1978, 1st revision of JIS X0208.
@@ -43,18 +42,18 @@ my @swap1978 = (
 my %swap1978 = (@swap1978, reverse @swap1978);
 
 sub encode {
-    my ($self, $utf8) = @_; # $chk is assumed to be true.
+    my ($self, $utf8, $chk) = @_;
 
     my $residue = '';
     my $conv;
     if ($self->name eq 'jis0208-1978-raw') {
-	$conv = $self->{encoding}->encode($utf8, FB_QUIET);
+	$conv = $self->{encoding}->encode($utf8, $chk);
 	$conv =~ s{([\x21-\x7E]{2})}{$swap1978{$1} || $1}eg;
     } elsif ($self->name eq 'jis0201-right') {
 	if ($utf8 =~ s/([^\x{FF61}-\x{FF9F}].*)$//s) {
 	    $residue = $1;
 	}
-	$conv = $self->{encoding}->encode($utf8, FB_QUIET);
+	$conv = $self->{encoding}->encode($utf8, $chk);
 	$conv =~ tr/\xA1-\xDF/\x21-\x5F/;
     }
 
@@ -63,20 +62,20 @@ sub encode {
 }
 
 sub decode {
-    my ($self, $str) = @_; # $chk is assumed to be true.
+    my ($self, $str, $chk) = @_;
 
     my $residue = '';
     my $conv;
     if ($self->name eq 'jis0208-1978-raw') {
 	$str =~ s{([\x21-\x7E]{2})}{$swap1978{$1} || $1}eg;
-	$conv = $self->{encoding}->decode($str, FB_QUIET);
+	$conv = $self->{encoding}->decode($str, $chk);
 	$str =~ s{([\x21-\x7E]{2})}{$swap1978{$1} || $1}eg;
     } elsif ($self->name eq 'jis0201-right') {
 	if ($str =~ s/([^\x21-\x5F].*)$//s) {
 	    $residue = $1;
 	}
 	$str =~ tr/\x21-\x5F/\xA1-\xDF/;
-	$conv = $self->{encoding}->decode($str, FB_QUIET);
+	$conv = $self->{encoding}->decode($str, $chk);
 	$str =~ tr/\xA1-\xDF/\x21-\x5F/;
     }
 
