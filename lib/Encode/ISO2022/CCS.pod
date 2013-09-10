@@ -47,14 +47,21 @@ of coded character sets [ISO-IR].
   203  iso-8859-15-right     ISO/IEC 8859 no. 15, Latin 9
   226  iso-8859-16-right     ISO/IEC 8859 no. 16, Latin 10
   ----------------------------------------------------------------
+  Note: About ISO-IR #13, JIS X 0201 katakana set, see
+    Encode::JISLegacy.
 
 =head2 L<Encode::JISLegacy>
 
   reg# Name                  Description
   ----------------------------------------------------------------
-   13  jis0201-right         JIS X 0201 katakana set
-   42  jis0208-1978-raw      JIS C 6226-1978, 1st rev. of JIS X 0208
+   13  jisx0201-right        JIS X 0201 katakana set
+   42  jisx0208-1978         JIS C 6226-1978, 1st rev. of JIS X 0208
+   87  jisx0208              JIS X 0208-1983, 2nd rev. of JIS X 0208 *
+  168      ditto             JIS X 0208-1990, 3rd rev. of JIS X 0208 *
+  159  jisx0212              JIS X 0212-1990 *
   ----------------------------------------------------------------
+  * For encodings not taking care of characters with diacritical
+    marks, see Encode::JP.
 
 =head2 Encodings provided by external modules
 

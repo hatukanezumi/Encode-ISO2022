@@ -3,7 +3,7 @@ package Encode::ISO2022JP2;
 use strict;
 use warnings;
 use Encode::ISO2022;
-our @ISA = qw/Encode::ISO2022/;
+our @ISA     = qw/Encode::ISO2022/;
 our $VERSION = '0.01';
 
 use Encode::ISOIRSingle;
@@ -14,58 +14,64 @@ use Encode::KR;
 Encode::define_alias(qr/\biso-?2022-?jp-?2$/i => '"iso-2022-jp-2"');
 $Encode::Encoding{'iso-2022-jp-2'} = bless {
     'CCS' => [
-	{
-	    desig_init => 1,
-	    designates("\e\x28\x42" => 'g0'),
-	    encoding => $Encode::Encoding{'ascii'},
+	{   encoding => $Encode::Encoding{'ascii'},
+	    g_init   => 'g0',
+	    g_seq    => "\e\x28\x42",
 	},
-	{
-	    designates("\e\x24\x42" => 'g0', 2),
-	    encoding => $Encode::Encoding{'jis0208-raw'},
+	{   bytes    => 2,
+	    encoding => $Encode::Encoding{'jisx0208'},
+	    g        => 'g0',
+	    g_seq    => "\e\x24\x42",
 	},
-	{
-	    designates("\e\x24\x41" => 'g0', 2),
+	{   bytes    => 2,
 	    encoding => $Encode::Encoding{'gb2312-raw'},
+	    g        => 'g0',
+	    g_seq    => "\e\x24\x41",
 	},
-	{
-	    designates("\e\x24\x28\x43" => 'g0', 2),
+	{   bytes    => 2,
 	    encoding => $Encode::Encoding{'ksc5601-raw'},
+	    g        => 'g0',
+	    g_seq    => "\e\x24\x28\x43",
 	},
+
 	# Secondary encodings.
-	{
-	    designates("\e\x28\x4A" => 'g0'),
-	    encoding => $Encode::Encoding{'iso-646-jp'},
+	{   encoding => $Encode::Encoding{'iso-646-jp'},
+	    g        => 'g0',
+	    g_seq    => "\e\x28\x4A",
 	},
-	{
-	    designates("\e\x2E\x41" => 'g2'),
-	    encoding => $Encode::Encoding{'iso-8859-1-right'},
-	    ss => "\e\x4E",
+	{   encoding => $Encode::Encoding{'iso-8859-1-right'},
+	    g        => 'g2',
+	    g_seq    => "\e\x2E\x41",
+	    ss       => "\e\x4E",
 	},
-	{
-	    designates("\e\x2E\x46" => 'g2'),
-	    encoding => $Encode::Encoding{'iso-8859-7-right'},
-	    ss => "\e\x4E",
+	{   encoding => $Encode::Encoding{'iso-8859-7-right'},
+	    g        => 'g2',
+	    g_seq    => "\e\x2E\x46",
+	    ss       => "\e\x4E",
 	},
-	{
-	    designates("\e\x24\x28\x44" => 'g0', 2),
-	    encoding => $Encode::Encoding{'jis0212-raw'},
+	{   bytes    => 2,
+	    encoding => $Encode::Encoding{'jisx0212'},
+	    g        => 'g0',
+	    g_seq    => "\e\x24\x28\x44",
 	},
-	{
-	    designates("\e\x24\x40" => 'g0', 2),
-	    encoding => $Encode::Encoding{'jis0208-1978-raw'},
+	{   bytes    => 2,
+	    encoding => $Encode::Encoding{'jisx0208-1978'},
+	    g        => 'g0',
+	    g_seq    => "\e\x24\x40",
 	},
     ],
     LineInit => 1,
-    Name => 'iso-2022-jp-2',
-    SubChar => "\x{3013}", 
+    Name     => 'iso-2022-jp-2',
+    SubChar  => "\x{3013}",
 } => __PACKAGE__;
 
 sub mime_name { shift->{Name} }
 
-sub perlio_ok { 0 }
+sub perlio_ok {0}
 
 1;
 __END__
+
 =head1 NAME
 
 Encode::ISO2022JP2 - iso-2022-jp-2, extended iso-2022-jp character set

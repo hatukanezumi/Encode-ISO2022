@@ -11,15 +11,25 @@ our $VERSION = '0.01';
 
 use Encode::JP;
 
-# JIS C6226-1978, 1st revision of JIS X0208.
-$Encode::Encoding{'jis0208-1978-raw'} = bless {
-    Name => 'jis0208-1978-raw',
+# JIS C 6226-1978, 1st revision of JIS X 0208.
+$Encode::Encoding{'jisx0208-1978'} = bless {
+    Name => 'jisx0208-1978',
     encoding => $Encode::Encoding{'jis0208-raw'},
 } => __PACKAGE__;
-# JIS X0201 katakana set.
-$Encode::Encoding{'jis0201-right'} = bless {
-    Name => 'jis0201-right',
+# JIS X 0201 katakana set.
+$Encode::Encoding{'jisx0201-right'} = bless {
+    Name => 'jisx0201-right',
     encoding => $Encode::Encoding{'jis0201-raw'},
+} => __PACKAGE__;
+# JIS X 0208-1990, 3rd revision of JIS X 0208.
+$Encode::Encoding{'jisx0208'} = bless {
+    Name => 'jisx0208',
+    encoding => $Encode::Encoding{'jis0208-raw'},
+} => __PACKAGE__;
+# JIS X 0212-1990.
+$Encode::Encoding{'jisx0212'} = bless {
+    Name => 'jisx0208',
+    encoding => $Encode::Encoding{'jis0212-raw'},
 } => __PACKAGE__;
 
 # 26 row-cell pairs swapped between JIS C 6226-1978 and JIS X 0208-1983.
@@ -45,16 +55,25 @@ sub encode {
     my ($self, $utf8, $chk) = @_;
 
     my $residue = '';
+
+    # We cannot handle characters followed by combining mark(s).
+    # FIXME: might use /(.\P{ccc=0}(?s).*)$/ (Perl >= 5.10).
+    if ($utf8 =~ s/(.[\x{0300}-\x{036F}\x{3099}\x{309A}](?s).*)$//) {
+	$residue = $1;
+    }
+
     my $conv;
-    if ($self->name eq 'jis0208-1978-raw') {
+    if ($self->name eq 'jisx0208-1978') {
 	$conv = $self->{encoding}->encode($utf8, $chk);
 	$conv =~ s{([\x21-\x7E]{2})}{$swap1978{$1} || $1}eg;
-    } elsif ($self->name eq 'jis0201-right') {
+    } elsif ($self->name eq 'jisx0201-right') {
 	if ($utf8 =~ s/([^\x{FF61}-\x{FF9F}].*)$//s) {
-	    $residue = $1;
+	    $residue = $1 . $residue;
 	}
 	$conv = $self->{encoding}->encode($utf8, $chk);
 	$conv =~ tr/\xA1-\xDF/\x21-\x5F/;
+    } else {
+	$conv = $self->{encoding}->encode($utf8, $chk);
     }
 
     $_[1] = $utf8 . $residue;
@@ -66,17 +85,19 @@ sub decode {
 
     my $residue = '';
     my $conv;
-    if ($self->name eq 'jis0208-1978-raw') {
+    if ($self->name eq 'jisx0208-1978') {
 	$str =~ s{([\x21-\x7E]{2})}{$swap1978{$1} || $1}eg;
 	$conv = $self->{encoding}->decode($str, $chk);
 	$str =~ s{([\x21-\x7E]{2})}{$swap1978{$1} || $1}eg;
-    } elsif ($self->name eq 'jis0201-right') {
+    } elsif ($self->name eq 'jisx0201-right') {
 	if ($str =~ s/([^\x21-\x5F].*)$//s) {
 	    $residue = $1;
 	}
 	$str =~ tr/\x21-\x5F/\xA1-\xDF/;
 	$conv = $self->{encoding}->decode($str, $chk);
 	$str =~ tr/\xA1-\xDF/\x21-\x5F/;
+    } else {
+	$conv = $self->{encoding}->decode($str, $chk);
     }
 
     $_[1] = $str . $residue;

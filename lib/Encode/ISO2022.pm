@@ -8,21 +8,21 @@ use strict;
 use warnings;
 use base qw(Encode::Encoding Exporter);
 our @EXPORT = qw/designates/;
-our $VERSION = '0.0_03';
+our $VERSION = '0.0_04';
 
 use Carp qw(carp croak);
 use Encode qw(:fallback_all);
 use XSLoader;
 XSLoader::load(__PACKAGE__, $VERSION);
 
-my $err_encode_nomap = '"\x{%04X}" does not map to %s';
+my $err_encode_nomap = '"\x{%*v04X}" does not map to %s';
 my $err_decode_nomap = '%s "\x%*v02X" does not map to Unicode';
 
 # Helper functions
 sub designates {
-    my ($desig_seq, $g, $bytes) = @_;
+    my ($g_seq, $g, $bytes) = @_;
     $bytes ||= 1;
-    return (desig_seq => $desig_seq, desig_to => $g, bytes => $bytes);
+    return (g_seq => $g_seq, g => $g, bytes => $bytes);
 }
 
 # decode method
@@ -70,11 +70,11 @@ sub decode {
 	    )
 	}gcx
     ) {
-	my ($func, $desig_seq, $ls, $ss, $ss2, $ss3, $chunk) =
+	my ($func, $g_seq, $ls, $ss, $ss2, $ss3, $chunk) =
 	    ($1, $2, $3, $4, $5, $6, $7);
 
-	if (length $desig_seq) {
-	    unless ($self->designate_dec($desig_seq)) {
+	if (length $g_seq) {
+	    unless ($self->designate_dec($g_seq)) {
 		#XXX;
 	    }
 	} elsif (length $ls) {
@@ -142,7 +142,7 @@ sub _decode {
     } else {
 	@ccs = (
 	    grep(
-		{ not ($_->{desig_to} or $_->{ls} or $_->{ss}) }
+		{ not ($_->{g} or $_->{g_init} or $_->{ls} or $_->{ss}) }
 		@{$self->{CCS} || []}
 	    ),
 	    @{$self->{State}->{gl} || []},
@@ -191,21 +191,21 @@ sub _decode {
 sub init_decoder {
     my $self = shift;
 
-    foreach my $ccs (grep { $_->{desig_init} } @{$self->{CCS} || []}) {
-	$self->designate_dec($ccs->{desig_seq});
+    foreach my $ccs (grep { $_->{g_init} } @{$self->{CCS} || []}) {
+	$self->designate_dec($ccs->{g_seq});
     }
 }
 
 sub designate_dec {
-    my ($self, $desig_seq) = @_;
+    my ($self, $g_seq) = @_;
 
     return undef
-	unless defined $desig_seq and length $desig_seq;
+	unless defined $g_seq and length $g_seq;
     my @ccs = grep {
-	$_->{desig_seq} and $_->{desig_seq} eq $desig_seq
+	$_->{g_seq} and $_->{g_seq} eq $g_seq
     } @{$self->{CCS} || []};
     return undef unless @ccs;
-    my $g = $ccs[0]->{desig_to};
+    my $g = $ccs[0]->{g} || $ccs[0]->{g_init};
     return undef unless $g;
 
     $self->{State}->{$g} = [@ccs];
@@ -267,10 +267,10 @@ sub encode {
 
 	$errChar = substr($utf8, 0, 1);
 	if ($chk & DIE_ON_ERR) {
-	    croak sprintf $err_encode_nomap, ord $errChar, $self->name;
+	    croak sprintf $err_encode_nomap, '}\x{', $errChar, $self->name;
 	}
 	if ($chk & WARN_ON_ERR) {
-	    carp sprintf $err_encode_nomap, ord $errChar, $self->name;
+	    carp sprintf $err_encode_nomap, '}\x{}', $errChar, $self->name;
 	}
 	if ($chk & RETURN_ON_ERR) {
 	    last;
@@ -321,7 +321,7 @@ sub init_encoder {
     my $self = shift;
 
     my $ret = '';
-    foreach my $ccs (grep { $_->{desig_init} } @{$self->{CCS} || []}) {
+    foreach my $ccs (grep { $_->{g_init} } @{$self->{CCS} || []}) {
 	$ret .= $self->designate($ccs);
     }
     return $ret;
@@ -330,53 +330,53 @@ sub init_encoder {
 sub designate {
     my ($self, $ccs) = @_;
 
-    my $desig_seq = $ccs->{desig_seq};
-    return '' unless $desig_seq;
+    my $g_seq = $ccs->{g_seq};
+    return '' unless $g_seq;
 
-    my $g = $ccs->{desig_to};
-    die sprintf 'Unknown designation sequence: \x%*vX', '\x', $desig_seq
+    my $g = $ccs->{g} || $ccs->{g_init};
+    die sprintf 'Unknown designation sequence: \x%*vX', '\x', $g_seq
 	unless defined $g;
 
     return ''
-	if $self->{State}->{$g} and $self->{State}->{$g} eq $desig_seq;
-    return $self->{State}->{$g} = $desig_seq;
+	if $self->{State}->{$g} and $self->{State}->{$g} eq $g_seq;
+    return $self->{State}->{$g} = $g_seq;
 }
 
 sub _parse_desig {
-    my $desig_seq = shift;
+    my $g_seq = shift;
 
     my $g;
-    unless ($desig_seq) {
+    unless ($g_seq) {
 	return '';
-    } elsif (index($desig_seq, "\e\x28") == 0) {
+    } elsif (index($g_seq, "\e\x28") == 0) {
 	$g = 'g0';
-    } elsif (index($desig_seq, "\e\x29") == 0) {
+    } elsif (index($g_seq, "\e\x29") == 0) {
 	$g = 'g1';
-    } elsif (index($desig_seq, "\e\x2A") == 0) {
+    } elsif (index($g_seq, "\e\x2A") == 0) {
 	$g = 'g2';
-    } elsif (index($desig_seq, "\e\x2B") == 0) {
+    } elsif (index($g_seq, "\e\x2B") == 0) {
 	$g = 'g3';
-    } elsif (index($desig_seq, "\e\x2D") == 0) {
+    } elsif (index($g_seq, "\e\x2D") == 0) {
 	$g = 'g1';
-    } elsif (index($desig_seq, "\e\x2E") == 0) {
+    } elsif (index($g_seq, "\e\x2E") == 0) {
 	$g = 'g2';
-    } elsif (index($desig_seq, "\e\x2F") == 0) {
+    } elsif (index($g_seq, "\e\x2F") == 0) {
 	$g = 'g3';
-    } elsif ($desig_seq =~ /^\e\x24[\x40-\x42]/) {
+    } elsif ($g_seq =~ /^\e\x24[\x40-\x42]/) {
 	$g = 'g0';
-    } elsif (index($desig_seq, "\e\x24\x28") == 0) {
+    } elsif (index($g_seq, "\e\x24\x28") == 0) {
 	$g = 'g0';
-    } elsif (index($desig_seq, "\e\x24\x29") == 0) {
+    } elsif (index($g_seq, "\e\x24\x29") == 0) {
 	$g = 'g1';
-    } elsif (index($desig_seq, "\e\x24\x2A") == 0) {
+    } elsif (index($g_seq, "\e\x24\x2A") == 0) {
 	$g = 'g2';
-    } elsif (index($desig_seq, "\e\x24\x2B") == 0) {
+    } elsif (index($g_seq, "\e\x24\x2B") == 0) {
 	$g = 'g3';
-    } elsif (index($desig_seq, "\e\x24\x2D") == 0) {
+    } elsif (index($g_seq, "\e\x24\x2D") == 0) {
 	$g = 'g1';
-    } elsif (index($desig_seq, "\e\x24\x2E") == 0) {
+    } elsif (index($g_seq, "\e\x24\x2E") == 0) {
 	$g = 'g2';
-    } elsif (index($desig_seq, "\e\x24\x2F") == 0) {
+    } elsif (index($g_seq, "\e\x24\x2F") == 0) {
 	$g = 'g3';
     } else {
 	return undef;
@@ -457,18 +457,6 @@ Each item is a hash reference containing following items.
 Number of bytes to represent each character.
 Default is 1.
 
-=item designates( STRING => G, [ BYTES ] )
-
-Defines escape sequence to designate this CCS,
-if it should be designated explicitly.
-
-Note that designates() function will be exported.
-
-=item desig_init => BOOLEAN
-
-If this flag is set, this CCS will be designated at beginning of coversion
-implicitly, and at end of conversion explicitly.
-
 =item encoding => ENCODING
 
 L<Encode::Encoding> object used as CCS.
@@ -483,15 +471,34 @@ L<Encode::ISO2022::CCS> lists available CCSs.
 
 If true value is set, each character will be invoked to GR.
 
-=item ls => STRING
+=item g => G
 
-Escape sequence or control character to invoke this CCS, if it should be
-invoked explicitly.
+=item g_init => G
+
+Working set this CCS may be designated to:
+C<'g0'>, C<'g1'>, C<'g2'> or C<'g3'>.
+
+If C<g_init> is set, this CCS will be designated at beginning of coversion
+implicitly, and at end of conversion explicitly.
+
+If C<g> or C<g_init> is set and neither of C<ls> nor C<ss> is not set,
+this CCS will be invoked when it is designated.
+
+If neither of C<g>, C<g_init>, C<ls> nor C<ss> is set,
+this CCS is invoked always.
+
+=item g_seq => STRING
+
+Escape sequence to designate this CCS, if it can be designated explicitly.
+
+=item ls => STRING
 
 =item ss => STRING
 
-Escape sequence or control character to invoke this CCS for only one
-character, if it should be invoked explicitly.
+Escape sequence or control character to invoke this CCS,
+if it should be invoked explicitly.
+
+If C<ss> is set, this CCS will be invoked for only one character.
 
 =back
 
