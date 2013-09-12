@@ -1,11 +1,15 @@
 use 5.7.2;
 use strict;
-use warnings;
+#use warnings;
 use ExtUtils::MakeMaker;
 use File::Spec;
 
 my %tables = (
-    def_t => [qw(iso-ir-14.ucm)],
+    jis_t => [qw(iso-ir-13.ucm iso-ir-14.ucm)],
+    iso8859_t => [qw(iso-ir-100.ucm iso-ir-101.ucm iso-ir-109.ucm
+	iso-ir-110.ucm iso-ir-126.ucm iso-ir-127.ucm iso-ir-138.ucm
+	iso-ir-144.ucm iso-ir-148.ucm iso-ir-157.ucm iso-ir-166.ucm
+	iso-ir-179.ucm iso-ir-199.ucm iso-ir-203.ucm iso-ir-226.ucm)],
 );
 
 unless ($ENV{AGGREGATE_TABLES}) {

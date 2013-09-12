@@ -5,7 +5,7 @@ use ExtUtils::MakeMaker;
 use File::Spec;
 
 my %tables = (
-    def_t => [qw(c1-ctrl.ucm)],
+    raw_t => [qw(jis-x-0212-ascii.ucm jis-x-0212-cp932.ucm)],
 );
 
 unless ($ENV{AGGREGATE_TABLES}) {
@@ -46,13 +46,13 @@ for my $d (@INC) {
 ($encode_h) = sort { $encode_h{$b} <=> $encode_h{$a} } keys %encode_h;
 print "encode.h is at $encode_h\n";
 
-my $name = 'ISO2022';
+my $name = 'JISLegacy';
 
 WriteMakefile(
     INC     => "-I$encode_h",
     NAME    => 'Encode::' . $name,
     VERSION_FROM => File::Spec->catfile(
-	File::Spec->updir, qw/lib Encode ISO2022.pm/
+	File::Spec->updir, qw/lib Encode JISLegacy.pm/
     ),
     OBJECT  => '$(O_FILES)',
     'dist'  => {

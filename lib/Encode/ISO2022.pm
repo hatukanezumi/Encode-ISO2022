@@ -6,24 +6,24 @@ package Encode::ISO2022;
 use 5.007003;
 use strict;
 use warnings;
-use base qw(Encode::Encoding Exporter);
-our @EXPORT = qw/designates/;
-our $VERSION = '0.0_04';
+use base qw(Encode::Encoding);
+our $VERSION = '0.0_05';
 
 use Carp qw(carp croak);
-use Encode qw(:fallback_all);
 use XSLoader;
 XSLoader::load(__PACKAGE__, $VERSION);
 
 my $err_encode_nomap = '"\x{%*v04X}" does not map to %s';
 my $err_decode_nomap = '%s "\x%*v02X" does not map to Unicode';
 
-# Helper functions
-sub designates {
-    my ($g_seq, $g, $bytes) = @_;
-    $bytes ||= 1;
-    return (g_seq => $g_seq, g => $g, bytes => $bytes);
-}
+my $DIE_ON_ERR = Encode::DIE_ON_ERR();
+my $FB_QUIET = Encode::FB_QUIET();
+my $HTMLCREF = Encode::HTMLCREF();
+my $LEAVE_SRC = Encode::LEAVE_SRC();
+my $PERLQQ = Encode::PERLQQ();
+my $RETURN_ON_ERR = Encode::RETURN_ON_ERR();
+my $WARN_ON_ERR = Encode::WARN_ON_ERR();
+my $XMLCREF = Encode::XMLCREF();
 
 # decode method
 
@@ -36,11 +36,10 @@ sub decode {
 
     if (ref $chk eq 'CODE') {
 	$chk_sub = $chk;
-	$chk = PERLQQ | LEAVE_SRC;
+	$chk = $PERLQQ | $LEAVE_SRC;
     }
 
-    delete $self->{State};
-    $self->init_decoder;
+    $self->init_state(1);
 
     pos($str) = 0;
     my $chunk = '';
@@ -86,25 +85,24 @@ sub decode {
 	while (length $chunk) {
 	    my ($conv, $bytes);
 
-	    ($conv, $bytes) = $self->_decode($chunk, $ss2, $ss3);
+	    ($conv, $bytes) = $self->_decode($chunk, $ss);
 	    if (defined $conv) {
 		$utf8 .= $conv;
 
 		if ($conv =~ /[\r\n]/ and $self->{LineInit}) {
-		    delete $self->{State};
-		    $self->init_decoder;
+		    $self->init_state(1);
 		}
 		next;
 	    }
 
 	    $errChar = substr($chunk, 0, $bytes || 1);
-	    if ($chk & DIE_ON_ERR) {
+	    if ($chk & $DIE_ON_ERR) {
 		croak sprintf $err_decode_nomap, $self->name, '\x', $errChar;
 	    }
-	    if ($chk & WARN_ON_ERR) {
+	    if ($chk & $WARN_ON_ERR) {
 		carp sprintf $err_decode_nomap, $self->name, '\x', $errChar;
 	    }
-	    if ($chk & RETURN_ON_ERR) {
+	    if ($chk & $RETURN_ON_ERR) {
 		last CHUNKS;
 	    }
 
@@ -114,7 +112,7 @@ sub decode {
 		$conv = $chk_sub->($errChar);
 		$conv = Encode::decode_utf8($conv)
 		    unless Encode::is_utf8($conv);
-	    } elsif ($chk & PERLQQ) {
+	    } elsif ($chk & $PERLQQ) {
 		$conv = sprintf '\x%*v02X', '\x', $errChar;
 	    } else {
 		$conv = "\x{FFFD}";
@@ -123,38 +121,35 @@ sub decode {
 	}
     }
     pos($str) -= length($chunk);
-    $_[1] = substr($str, pos $str) unless $chk & LEAVE_SRC;
+    $_[1] = substr($str, pos $str) unless $chk & $LEAVE_SRC;
 
     return $utf8;
 }
 
 sub _decode {
-    my ($self, $chunk, $ss2, $ss3) = @_;
+    my ($self, $chunk, $ss) = @_;
 
     my @ccs;
     my $conv;
     my $bytes_min;
 
-    if ($ss2) {
-	@ccs = @{$self->{State}->{g2} || []};
-    } elsif ($ss3) {
-	@ccs = @{$self->{State}->{g3} || []};
+    if ($ss) {
+	@ccs = grep {
+	    $_->{_designated_to} and
+	    $_->{ss} and $_->{ss} eq $ss
+	} @{$self->{CCS} || []};
     } else {
-	@ccs = (
-	    grep(
-		{ not ($_->{g} or $_->{g_init} or $_->{ls} or $_->{ss}) }
-		@{$self->{CCS} || []}
-	    ),
-	    @{$self->{State}->{gl} || []},
-	    @{$self->{State}->{gr} || []}
-	);
+	@ccs = grep {
+	    $_->{_invoked_to} or
+	    not ($_->{g} or $_->{g_init} or $_->{ls} or $_->{ss})
+	} @{$self->{CCS} || []};
     }
 
     foreach my $ccs (@ccs) {
 	next unless $ccs and $ccs->{encoding}; #FIXME
 
 	my $residue;
-	if ($ss2 or $ss3) {
+	if ($ss) {
 	    $residue = substr($chunk, $ccs->{bytes} || 1);
 	    $chunk = substr($chunk, 0, $ccs->{bytes} || 1);
 	} else {
@@ -162,15 +157,15 @@ sub _decode {
 	}
 
 	if ($ccs->{gr}) {
-	    unless ($chunk =~ /^\xA0-\xFF/) {
+	    unless ($chunk =~ /^[\xA0-\xFF]/) {
 		$chunk .= $residue;
 		next;
 	    }
 	    $chunk =~ tr/\x20-\x7F\xA0-\xFF/\xA0-\xFF\x20-\x7F/;
-	    $conv = $ccs->{encoding}->decode($chunk, FB_QUIET);
+	    $conv = $ccs->{encoding}->decode($chunk, $FB_QUIET);
 	    $chunk =~ tr/\x20-\x7F\xA0-\xFF/\xA0-\xFF\x20-\x7F/;
 	} else {
-	    $conv = $ccs->{encoding}->decode($chunk, FB_QUIET);
+	    $conv = $ccs->{encoding}->decode($chunk, $FB_QUIET);
 	}
 	$bytes_min = $ccs->{bytes}
 	    if $ccs->{bytes} and
@@ -188,49 +183,27 @@ sub _decode {
     return (undef, $bytes_min);
 }
 
-sub init_decoder {
-    my $self = shift;
-
-    foreach my $ccs (grep { $_->{g_init} } @{$self->{CCS} || []}) {
-	$self->designate_dec($ccs->{g_seq});
-    }
-}
-
 sub designate_dec {
     my ($self, $g_seq) = @_;
 
-    return undef
-	unless defined $g_seq and length $g_seq;
-    my @ccs = grep {
+    my $ccs = (grep {
 	$_->{g_seq} and $_->{g_seq} eq $g_seq
-    } @{$self->{CCS} || []};
-    return undef unless @ccs;
-    my $g = $ccs[0]->{g} || $ccs[0]->{g_init};
-    return undef unless $g;
+    } @{$self->{CCS} || []})[0];
+    return undef unless $ccs;
 
-    $self->{State}->{$g} = [@ccs];
-    unless ($ccs[0]->{ls} or $ccs[0]->{ss}) {
-	if ($ccs[0]->{gr}) {
-	    $self->{State}->{gr} = [@ccs];
-	} else {
-	    $self->{State}->{gl} = [@ccs];
-	}
-    }
+    return $self->designate($ccs);
 }
 
 sub invoke_dec {
-    my ($self, $inv) = @_;
+    my ($self, $ls) = @_;
 
-    my ($g, $gg) = _parse_inv($inv);
-    return undef unless defined $g;
+    my $ccs = (grep {
+	$_->{_designated_to} and
+	$_->{ls} and $_->{ls} eq $ls
+    } @{$self->{CCS} || []})[0];
+    return undef unless $ccs;
 
-    $self->{State}->{$gg} = $self->{State}->{$g};
-}
-
-sub _parse_inv {
-    my $inv = shift;
-
-    ;
+    return $self->invoke($ccs);
 }
 
 # encode method
@@ -245,11 +218,10 @@ sub encode {
 
     if (ref $chk eq 'CODE') {
 	$chk_sub = $chk;
-	$chk = PERLQQ | LEAVE_SRC;
+	$chk = $PERLQQ | $LEAVE_SRC;
     }
 
-    delete $self->{State};
-    $self->init_encoder;
+    $self->init_state(1);
 
     while (length $utf8) {
 	my $conv;
@@ -259,20 +231,19 @@ sub encode {
 	    $str .= $conv;
 
 	    if ($conv =~ /[\r\n]/ and $self->{LineInit}) {
-		delete $self->{State};
-		$self->init_encoder;
+		$self->init_state(1);
 	    }
 	    next;
 	}
 
 	$errChar = substr($utf8, 0, 1);
-	if ($chk & DIE_ON_ERR) {
+	if ($chk & $DIE_ON_ERR) {
 	    croak sprintf $err_encode_nomap, '}\x{', $errChar, $self->name;
 	}
-	if ($chk & WARN_ON_ERR) {
+	if ($chk & $WARN_ON_ERR) {
 	    carp sprintf $err_encode_nomap, '}\x{}', $errChar, $self->name;
 	}
-	if ($chk & RETURN_ON_ERR) {
+	if ($chk & $RETURN_ON_ERR) {
 	    last;
 	}
 
@@ -280,11 +251,11 @@ sub encode {
 
 	if ($chk_sub) {
 	    $subChar = $chk_sub->(ord $errChar);
-	} elsif ($chk & PERLQQ) {
+	} elsif ($chk & $PERLQQ) {
 	    $subChar = sprintf '\x{%04X}', ord $errChar;
-	} elsif ($chk & XMLCREF) {
+	} elsif ($chk & $XMLCREF) {
 	    $subChar = sprintf '&#x%X;', ord $errChar;
-	} elsif ($chk & HTMLCREF) {
+	} elsif ($chk & $HTMLCREF) {
 	    $subChar = sprintf '&#%d;', ord $errChar;
 	} else {
 	    $subChar = $self->{SubChar} || '?';
@@ -294,10 +265,10 @@ sub encode {
 	    $str .= $conv;
 	}
     }
-    $_[1] = $utf8 unless $chk & LEAVE_SRC;
+    $_[1] = $utf8 unless $chk & $LEAVE_SRC;
 
     if (length $str) {
-	$str .= $self->init_encoder;
+	$str .= $self->init_state();
     }
     return $str;
 }
@@ -306,9 +277,9 @@ sub _encode {
     my ($self, $utf8) = @_;
 
     foreach my $ccs (@{$self->{CCS} || []}) {
-	next unless $ccs and $ccs->{encoding}; #FIXME
+	next if $ccs->{dec_only};
 
-	my $conv = $ccs->{encoding}->encode($utf8, FB_QUIET);
+	my $conv = $ccs->{encoding}->encode($utf8, $FB_QUIET);
 	if (defined $conv and length $conv) {
 	    $_[1] = $utf8;
 	    return $self->designate($ccs) . $self->invoke($ccs, $conv);
@@ -317,8 +288,16 @@ sub _encode {
     return undef;
 }
 
-sub init_encoder {
-    my $self = shift;
+sub init_state {
+    my ($self, $reset) = @_;
+
+    if ($reset) {
+	foreach my $ccs (@{$self->{CCS} || []}) {
+	    delete $ccs->{_designated_to};
+	    delete $ccs->{_invoked_to};
+	}
+	delete $self->{_state};
+    }
 
     my $ret = '';
     foreach my $ccs (grep { $_->{g_init} } @{$self->{CCS} || []}) {
@@ -330,73 +309,66 @@ sub init_encoder {
 sub designate {
     my ($self, $ccs) = @_;
 
-    my $g_seq = $ccs->{g_seq};
-    return '' unless $g_seq;
-
     my $g = $ccs->{g} || $ccs->{g_init};
-    die sprintf 'Unknown designation sequence: \x%*vX', '\x', $g_seq
-	unless defined $g;
+    die sprintf 'Cannot designate %s', $ccs->{encoding}->name
+	unless $g;
+    my $g_seq = $ccs->{g_seq};
 
-    return ''
-	if $self->{State}->{$g} and $self->{State}->{$g} eq $g_seq;
-    return $self->{State}->{$g} = $g_seq;
-}
-
-sub _parse_desig {
-    my $g_seq = shift;
-
-    my $g;
-    unless ($g_seq) {
-	return '';
-    } elsif (index($g_seq, "\e\x28") == 0) {
-	$g = 'g0';
-    } elsif (index($g_seq, "\e\x29") == 0) {
-	$g = 'g1';
-    } elsif (index($g_seq, "\e\x2A") == 0) {
-	$g = 'g2';
-    } elsif (index($g_seq, "\e\x2B") == 0) {
-	$g = 'g3';
-    } elsif (index($g_seq, "\e\x2D") == 0) {
-	$g = 'g1';
-    } elsif (index($g_seq, "\e\x2E") == 0) {
-	$g = 'g2';
-    } elsif (index($g_seq, "\e\x2F") == 0) {
-	$g = 'g3';
-    } elsif ($g_seq =~ /^\e\x24[\x40-\x42]/) {
-	$g = 'g0';
-    } elsif (index($g_seq, "\e\x24\x28") == 0) {
-	$g = 'g0';
-    } elsif (index($g_seq, "\e\x24\x29") == 0) {
-	$g = 'g1';
-    } elsif (index($g_seq, "\e\x24\x2A") == 0) {
-	$g = 'g2';
-    } elsif (index($g_seq, "\e\x24\x2B") == 0) {
-	$g = 'g3';
-    } elsif (index($g_seq, "\e\x24\x2D") == 0) {
-	$g = 'g1';
-    } elsif (index($g_seq, "\e\x24\x2E") == 0) {
-	$g = 'g2';
-    } elsif (index($g_seq, "\e\x24\x2F") == 0) {
-	$g = 'g3';
-    } else {
-	return undef;
+    my @ccs;
+    if ($g_seq) { # explicit designation
+	@ccs = grep {
+	    $_->{g_seq} and $_->{g_seq} eq $g_seq
+	} @{$self->{CCS} || []};
+    } else { # static designation
+	@ccs = grep {
+	    not $_->{g_seq} and
+	    ($_->{g} and $_->{g} eq $g or $_->{g_init} and $_->{g_init} eq $g)
+	} @{$self->{CCS} || []};
     }
-    return $g;
+    # Already designated: do nothing
+    return ''
+	unless grep {
+	    not ($_->{_designated_to} and $_->{_designated_to} eq $g)
+	} @ccs;
+
+    # modify designation
+    foreach my $_ (@{$self->{_state}->{$g} || []}) {
+	delete $_->{_designated_to};
+	delete $_->{_invoked_to};
+    }
+    my %invoked = (gr => [], gl => []);
+    foreach my $_ (@ccs) {
+	$_->{_designated_to} = $g;
+	unless ($_->{ls} or $_->{ss}) {
+	    my $i = $_->{gr} ? 'gr' : 'gl';
+
+	    $_->{_invoked_to} = $i;
+	    push @{$invoked{$i}}, $_;
+	}
+    }
+
+    # modify invokation
+    foreach my $i (qw/gr gl/) {
+	next unless @{$invoked{$i} || []};
+
+	foreach my $_ (@{$self->{_state}->{$i} || []}) {
+	    delete $_->{_invoked_to};
+	}
+	$self->{_state}->{$i} = $invoked{$i};
+    }
+
+    $self->{_state}->{$g} = [@ccs];
+    return $g_seq || '';
 }
 
 sub invoke {
     my ($self, $ccs, $str) = @_;
+    $str = '' unless defined $str;
 
-    my $g;
-    if ($ccs->{ls} and $ccs->{ls} =~ /^\e[\x7C\x7D\x7E]$/ or
-	$ccs->{gr}) {
-	$g = 'gr';
-    } else {
-	$g = 'gl';
-    }
+    my $i = $ccs->{gr} ? 'gr' : 'gl';
 
-    if ($g eq 'gr') {
-	$str =~ s/([\x20-\x7F])/chr(ord($1) | 0x80)/eg;
+    if ($i eq 'gr') {
+	$str =~ tr/\x20-\x7F/\xA0-\xFF/;
     }
 
     if ($ccs->{ss}) {
@@ -406,9 +378,39 @@ sub invoke {
 	}
 	return $out;	
     } elsif ($ccs->{ls}) {
+	my $ls = $ccs->{ls};
+	my $g_seq = $ccs->{g_seq};
+	my $g = $ccs->{g} || $ccs->{g_init};
+
+	my @ccs;
+	if ($g_seq) {
+	    @ccs = grep {
+		$_->{g_seq} and $_->{g_seq} eq $g_seq and
+		$_->{ls} and $_->{ls} eq $ls and
+		($_->{gr} ? 'gr' : 'gl') eq $i
+	    } @{$self->{CCS} || []};
+	} else {
+	    @ccs = grep {
+		not $_->{g_seq} and ($_->{g} || $_->{g_init}) eq $g and
+		$_->{ls} and $_->{ls} eq $ls and
+		($_->{gr} ? 'gr' : 'gl') eq $i
+	    } @{$self->{CCS} || []};
+	}
+	# Already invoked: add nothing
 	return $str
-	    if $self->{State}->{$g} eq $ccs->{ls};
-	return ($self->{State}->{$g} = $ccs->{ls}) . $str;
+	    unless grep {
+		not ($_->{_invoked_to} and $_->{_invoked_to} eq $i)
+	    } @ccs;
+
+	foreach my $_ (@{$self->{_state}->{$i} || []}) {
+	    delete $_->{_invoked_to};
+	}
+	foreach my $_ (@ccs) {
+	    $_->{_invoked_to} = $i;
+	}
+
+	$self->{_state}->{$i} = [@ccs];
+	return $ccs->{ls} . $str;
     } else {
 	return $str;
     }
@@ -456,6 +458,10 @@ Each item is a hash reference containing following items.
 
 Number of bytes to represent each character.
 Default is 1.
+
+=item dec_only => BOOLEAN
+
+If true value is set, this CCS will be used only for decoding.
 
 =item encoding => ENCODING
 

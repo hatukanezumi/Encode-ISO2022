@@ -30,6 +30,7 @@ of coded character sets [ISO-IR].
 
   reg# Name                  Description
   ----------------------------------------------------------------
+   13  jis-x-0201-right      JIS X 0201 katakana set
    14  iso-646-jp            JIS X 0201 Latin set, ISO/IEC 646 JP
   100  iso-8859-1-right      ISO/IEC 8859 no. 1, Latin 1
   101  iso-8859-2-right      ISO/IEC 8859 no. 2, Latin 2
@@ -47,21 +48,19 @@ of coded character sets [ISO-IR].
   203  iso-8859-15-right     ISO/IEC 8859 no. 15, Latin 9
   226  iso-8859-16-right     ISO/IEC 8859 no. 16, Latin 10
   ----------------------------------------------------------------
-  Note: About ISO-IR #13, JIS X 0201 katakana set, see
-    Encode::JISLegacy.
 
 =head2 L<Encode::JISLegacy>
 
   reg# Name                  Description
   ----------------------------------------------------------------
-   13  jisx0201-right        JIS X 0201 katakana set
-   42  jisx0208-1978         JIS C 6226-1978, 1st rev. of JIS X 0208
-   87  jisx0208              JIS X 0208-1983, 2nd rev. of JIS X 0208 *
+   42  jis-x-0208-1978       JIS C 6226-1978, 1st rev. of JIS X 0208
+   87  jis-x-0208            JIS X 0208-1983, 2nd rev. of JIS X 0208 *
   168      ditto             JIS X 0208-1990, 3rd rev. of JIS X 0208 *
-  159  jisx0212              JIS X 0212-1990 *
+  159  jis-x-0212            JIS X 0212-1990 *
+       jis-x-0212-ascii      JIS X 0212-1990 operable with ASCII
   ----------------------------------------------------------------
-  * For encodings not taking care of characters with diacritical
-    marks, see Encode::JP.
+  * About compatible encodings not taking care of characters with
+    combning marks, see Encode::JP.
 
 =head2 Encodings provided by external modules
 
@@ -110,6 +109,8 @@ of coded character sets [ISO-IR].
   168      ditto             JIS X 0208-1990, 3rd rev. of JIS X 0208
   159  jis0212-raw           JIS X 0212-1990
   ----------------------------------------------------------------
+  Note that GL mapping of jis0201-raw is broken.  Use iso-646-jp
+  in Encode::ISOIRSingle.
 
 =head3 L<Encode::KR>
 

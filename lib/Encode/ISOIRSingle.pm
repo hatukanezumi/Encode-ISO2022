@@ -12,42 +12,6 @@ use Encode::Byte;
 use XSLoader;
 XSLoader::load(__PACKAGE__, $VERSION);
 
-foreach my $n (1..11, 13..16) {
-    $Encode::Encoding{"iso-8859-$n-right"} = bless {
-	Name => "iso-8859-$n-right",
-	encoding => $Encode::Encoding{"iso-8859-$n"},
-    } => __PACKAGE__;
-}
-
-sub encode {
-    my ($self, $utf8, $chk) = @_;
-
-    my $residue = '';
-    if ($utf8 =~ s/([\x00-\x9F].*)$//s) {
-	$residue = $1;
-    }
-    my $conv = $self->{encoding}->encode($utf8, $chk);
-    $conv =~ tr/\xA0-\xFF/\x20-\x7F/;
-
-    $_[1] = $utf8 . $residue;
-    return $conv;
-}
-
-sub decode {
-    my ($self, $str, $chk) = @_;
-
-    my $residue = '';
-    if ($str =~ s/[^\x20-\x7F].*$//s) {
-	$residue = $1;
-    }
-    $str =~ tr/\x20-\x7F/\xA0-\xFF/;
-    my $conv = $self->{encoding}->decode($str, $chk);
-    $str =~ tr/\xA0-\xFF/\x20-\x7F/;
-
-    $_[1] = $str . $residue;
-    return $conv;
-}
-
 1;
 __END__
 
