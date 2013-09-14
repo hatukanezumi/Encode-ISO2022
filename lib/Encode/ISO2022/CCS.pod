@@ -6,13 +6,11 @@
 
 Encode::ISO2022::CCS - coded character sets for ISO/IEC 2022 encoding scheme
 
-=head1 SYNOPSIS
-
-FIXME FIXME
-
 =head1 DESCRIPTION
 
-FIXME FIXME
+This document lists encoding which may be used as coded character set
+(CCS) for ISO/IEC 2022 character encoding scheme.
+For more details about CCS see L<Encode::ISO2022>.
 
 "reg#" column indicates the number of registry in ISO international registry
 of coded character sets [ISO-IR].
@@ -54,13 +52,8 @@ of coded character sets [ISO-IR].
   reg# Name                  Description
   ----------------------------------------------------------------
    42  jis-x-0208-1978       JIS C 6226-1978, 1st rev. of JIS X 0208
-   87  jis-x-0208            JIS X 0208-1983, 2nd rev. of JIS X 0208 *
-  168      ditto             JIS X 0208-1990, 3rd rev. of JIS X 0208 *
-  159  jis-x-0212            JIS X 0212-1990 *
-       jis-x-0212-ascii      JIS X 0212-1990 operable with ASCII
+ (159) jis-x-0212-ascii      JIS X 0212-1990 operable with ASCII
   ----------------------------------------------------------------
-  * About compatible encodings not taking care of characters with
-    combning marks, see Encode::JP.
 
 =head2 Encodings provided by external modules
 
@@ -69,7 +62,7 @@ of coded character sets [ISO-IR].
   reg# Name                  Description
   ----------------------------------------------------------------
    58  gb2312-raw            GB2312-80
-  none gb12345-raw           GB12345-90
+  n/a  gb12345-raw           GB12345-90
   165  iso-ir-165            CCITT Chinese set
   ----------------------------------------------------------------
 
@@ -77,7 +70,7 @@ of coded character sets [ISO-IR].
 
   reg# Name                  Description
   ----------------------------------------------------------------
-  none cccii                 CCCII
+  n/a  cccii                 CCCII
   171  cns11643-1            CNS 11643 plane 1
   172  cns11643-2            CNS 11643 plane 2
   183  cns11643-3            CNS 11643 plane 3
@@ -85,13 +78,17 @@ of coded character sets [ISO-IR].
   185  cns11643-5            CNS 11643 plane 5
   186  cns11643-6            CNS 11643 plane 6
   187  cns11643-7            CNS 11643 plane 7
-  none cns11643-f            CNS 11643 plane 15 or 8
+  n/a  cns11643-f            CNS 11643 plane 15 or 8
   ----------------------------------------------------------------
 
 =head3 L<Encode::JISX0213::CCS>
 
   reg# Name                  Description
   ----------------------------------------------------------------
+   87  jis-x-0208            JIS X 0208-1983, 2nd rev. of JIS X 0208
+  168      ditto             JIS X 0208-1990, 3rd rev. of JIS X 0208
+       jis-x-0208-ascii
+       jis-x-0208-jis
   228  jisx0213-2000-plane1  JIS X 0213:2000 level 3 (plane 1)
        jisx0213-2000-plane1-ascii
        jisx0213-2000-plane1-jis
@@ -105,12 +102,22 @@ of coded character sets [ISO-IR].
 
   reg# Name                  Description
   ----------------------------------------------------------------
-   87  jis0208-raw           JIS X 0208-1983, 2nd rev. of JIS X 0208
-  168      ditto             JIS X 0208-1990, 3rd rev. of JIS X 0208
+   87  jis0208-raw           JIS X 0208-1983, 2nd rev. of JIS X 0208 *
+  168      ditto             JIS X 0208-1990, 3rd rev. of JIS X 0208 *
   159  jis0212-raw           JIS X 0212-1990
   ----------------------------------------------------------------
-  Note that GL mapping of jis0201-raw is broken.  Use iso-646-jp
-  in Encode::ISOIRSingle.
+
+=over
+
+=item *
+
+About compatible encodings taking care of characters with combning marks,
+see Encode::JISX0213.
+
+=back
+
+Note that GL mapping of jis0201-raw provided by this module is broken.
+Use iso-646-jp provided by L<Encode::ISOIRSingle>.
 
 =head3 L<Encode::KR>
 

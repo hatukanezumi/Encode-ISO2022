@@ -7,7 +7,7 @@ use 5.007003;
 use strict;
 use warnings;
 use base qw(Encode::Encoding);
-our $VERSION = '0.0_05';
+our $VERSION = '0.000_06';
 
 use Carp qw(carp croak);
 use XSLoader;
@@ -521,8 +521,6 @@ Unicode string to be used for substitution character.
 
 To know more about use of this module,
 the source of L<Encode::ISO2022JP2> may be an example.
-
-FIXME FIXME
 
 =head1 SEE ALSO
 
