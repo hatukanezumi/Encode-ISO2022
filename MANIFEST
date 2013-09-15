@@ -34,4 +34,4 @@ ucm/iso-ir-199.ucm
 ucm/iso-ir-203.ucm
 ucm/iso-ir-226.ucm
 ucm/jis-x-0212-ascii.ucm
-#ucm/jis-x-0212-cp932.ucm
+ucm/jis-x-0212-cp932.ucm

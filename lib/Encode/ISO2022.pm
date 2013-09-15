@@ -7,7 +7,7 @@ use 5.007003;
 use strict;
 use warnings;
 use base qw(Encode::Encoding);
-our $VERSION = '0.000_06';
+our $VERSION = '0.000_07';
 
 use Carp qw(carp croak);
 use XSLoader;
@@ -443,7 +443,7 @@ Instances of L<Encode::ISO2022> have following hash items.
 
 =over 4
 
-=item Name => NAME
+=item Name => STRING
 
 The name of this encoding as L<Encode::Encoding> object.
 
@@ -454,7 +454,7 @@ Each item is a hash reference containing following items.
 
 =over 4
 
-=item bytes => BYTES
+=item bytes => NUMBER
 
 Number of bytes to represent each character.
 Default is 1.
@@ -477,9 +477,9 @@ L<Encode::ISO2022::CCS> lists available CCSs.
 
 If true value is set, each character will be invoked to GR.
 
-=item g => G
+=item g => STRING
 
-=item g_init => G
+=item g_init => STRING
 
 Working set this CCS may be designated to:
 C<'g0'>, C<'g1'>, C<'g2'> or C<'g3'>.

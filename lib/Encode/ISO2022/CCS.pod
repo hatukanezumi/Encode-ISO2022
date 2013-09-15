@@ -4,16 +4,18 @@
 
 =head1 NAME
 
-Encode::ISO2022::CCS - coded character sets for ISO/IEC 2022 encoding scheme
+Encode::ISO2022::CCS - coded character sets for ISO/IEC 2022 character encoding scheme
 
 =head1 DESCRIPTION
 
 This document lists encoding which may be used as coded character set
 (CCS) for ISO/IEC 2022 character encoding scheme.
-For more details about CCS see L<Encode::ISO2022>.
 
-"reg#" column indicates the number of registry in ISO international registry
-of coded character sets [ISO-IR].
+From view of Perl, a CCS is the L<Encode::Encoding> object with stateless and
+fixed-length conversion over 94^n or 96^n code table.
+
+"reg#" column in tables below indicates the number of registry in ISO
+International Registry of Coded Character Sets [ISO-IR].
 
 =head2 Built-in encodings
 
@@ -52,7 +54,8 @@ of coded character sets [ISO-IR].
   reg# Name                  Description
   ----------------------------------------------------------------
    42  jis-x-0208-1978       JIS C 6226-1978, 1st rev. of JIS X 0208
- (159) jis-x-0212-ascii      JIS X 0212-1990 operable with ASCII
+ (159) jis-x-0212-ascii      JIS X 0212-1990 cooperable with ASCII
+ (159) jis-x-0212-cp932      JIS X 0212-1990 cooperable with CP932
   ----------------------------------------------------------------
 
 =head2 Encodings provided by external modules
@@ -89,21 +92,29 @@ of coded character sets [ISO-IR].
   168      ditto             JIS X 0208-1990, 3rd rev. of JIS X 0208
        jis-x-0208-ascii
        jis-x-0208-jis
-  228  jisx0213-2000-plane1  JIS X 0213:2000 level 3 (plane 1)
-       jisx0213-2000-plane1-ascii
-       jisx0213-2000-plane1-jis
-  233  jisx0213-plane1       JIS X 0213:2004 level 3 (plane 1)
-       jisx0213-plane1-ascii
-       jisx0213-plane1-jis
-  229  jisx0213-plane2       JIS X 0213:2000/2004 level 4 (plane 2)
+  228  jis-x-0213-2000-plane1  JIS X 0213:2000 level 3 (plane 1)
+       jis-x-0213-2000-plane1-ascii
+       jis-x-0213-2000-plane1-jis
+  233  jis-x-0213-plane1     JIS X 0213:2004 level 3 (plane 1)
+       jis-x-0213-plane1-ascii
+       jis-x-0213-plane1-jis
+  229  jis-x-0213-plane2     JIS X 0213:2000/2004 level 4 (plane 2)
   ----------------------------------------------------------------
+
+=over
+
+=item *
+
+About "-ascii" and "-jis" variants see documentation of module.
+
+=back
 
 =head3 L<Encode::JP>
 
   reg# Name                  Description
   ----------------------------------------------------------------
-   87  jis0208-raw           JIS X 0208-1983, 2nd rev. of JIS X 0208 *
-  168      ditto             JIS X 0208-1990, 3rd rev. of JIS X 0208 *
+   87  jis0208-raw           JIS X 0208-1983, 2nd rev. of JIS X 0208
+  168      ditto             JIS X 0208-1990, 3rd rev. of JIS X 0208
   159  jis0212-raw           JIS X 0212-1990
   ----------------------------------------------------------------
 
@@ -114,10 +125,12 @@ of coded character sets [ISO-IR].
 About compatible encodings taking care of characters with combning marks,
 see Encode::JISX0213.
 
-=back
+=item *
 
-Note that GL mapping of jis0201-raw provided by this module is broken.
-Use iso-646-jp provided by L<Encode::ISOIRSingle>.
+Note that GL mapping of C<jis0201-raw> provided by this module is broken.
+Use C<iso-646-jp> provided by L<Encode::ISOIRSingle>.
+
+=back
 
 =head3 L<Encode::KR>
 
@@ -130,7 +143,7 @@ Use iso-646-jp provided by L<Encode::ISOIRSingle>.
 
 See modules described above for specific CCS.
 
-ISO-IR
+[ISO-IR]
 I<International Register of Coded Character Sets to be Used with Escape
 Sequences>, L<http://www.itscj.ipsj.or.jp/ISO-IR/>.
 

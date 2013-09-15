@@ -9,6 +9,8 @@ WriteMakefile(
     VERSION_FROM  => 'lib/Encode/ISO2022.pm',
     ABSTRACT_FROM => 'lib/Encode/ISO2022.pm',
     AUTHOR        => 'Hatuka*nezumi - IKEDA Soji <hatuka@nezumi.nu>',
+    LICENSE       => 'perl',
+    MIN_PERL_VERSION   => '5.007003',
     CONFIGURE_REQUIRES => {'ExtUtils::MakeMaker' => 0,},
     BUILD_REQUIRES     => {
 	'ExtUtils::MakeMaker' => 0,
