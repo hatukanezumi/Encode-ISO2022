@@ -75,7 +75,7 @@ $Encode::Encoding{'iso-2022-jp-2'} = bless {
 
 sub mime_name { shift->{Name} }
 
-sub perlio_ok {0}
+sub needs_lines { 1 }
 
 1;
 __END__
@@ -104,10 +104,11 @@ This module provides iso2022-jp-2 encoding.
 
 To find out how to use this module in detail, see L<Encode>.
 
-=head1 CAVEAT
+=head2 Note on Implementation
 
-iso-2022-jp-2 may not be used with PerlIO layer,
-because it keeps designation state beyond lines.
+Though RFC 1554 allows designation of JIS X 0201 Latin set at end of the
+lines, it also states that such use of non-ASCII is "discouraged".
+So by this module, ASCII is always assumed at end of encoded lines.
 
 =head1 SEE ALSO
 

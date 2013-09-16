@@ -1,8 +1,8 @@
 0x0020:  !"#$%&'()*+,-./0123456789:;<=>?
 0x0040: @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
 0x0060: `abcdefghijklmnopqrstuvwxyz{|}~
-0x00a0:  ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿
-0x00c0: ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞß
+0x00a0:  ¡¢£¤\¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿
+0x00c0: ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞß
 0x00e0: àáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ
 0x0100: ĀāĂăĄąĆćĈĉĊċČčĎďĐđĒē  ĖėĘęĚěĜĝĞğ
 0x0120: ĠġĢ ĤĥĦħĨĩĪī  ĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿ

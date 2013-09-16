@@ -17,6 +17,7 @@ my $src_utf = File::Spec->catfile($dir,"iso2022jp2.utf");
 my $dst_enc = File::Spec->catfile($dir,"$$.enc");
 my $dst_utf = File::Spec->catfile($dir,"$$.utf");
 
+{
 open my $src, '<', $src_enc or die "$src_enc: $!";
 my $txt = join '', <$src>;
 close $src;
@@ -28,7 +29,9 @@ print $dst $uni;
 close $dst;
 is(compare_text($src_utf, $dst_utf), 0, "decode")
     and unlink $dst_utf;
+}
 
+{
 open my $src, '<', $src_utf or die "$src_utf: $!";
 my $uni = join '', <$src>;
 close $src;
@@ -40,4 +43,5 @@ print $dst $txt;
 close $dst;
 is(compare_text($src_enc, $dst_enc), 0, "encode")
     and unlink $dst_enc;
+}
 

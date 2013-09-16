@@ -7,7 +7,7 @@ use 5.007003;
 use strict;
 use warnings;
 use base qw(Encode::Encoding);
-our $VERSION = '0.000_07';
+our $VERSION = '0.000_08';
 
 use Carp qw(carp croak);
 use XSLoader;
@@ -72,11 +72,11 @@ sub decode {
 	my ($func, $g_seq, $ls, $ss, $ss2, $ss3, $chunk) =
 	    ($1, $2, $3, $4, $5, $6, $7);
 
-	if (length $g_seq) {
+	if ($g_seq) {
 	    unless ($self->designate_dec($g_seq)) {
 		#XXX;
 	    }
-	} elsif (length $ls) {
+	} elsif ($ls) {
 	    unless ($self->invoke_dec($ls)) {
 		#XXX;
 	    }
@@ -109,15 +109,14 @@ sub decode {
 	    substr($chunk, 0, $bytes || 1) = '';
 
 	    if ($chk_sub) {
-		$conv = $chk_sub->($errChar);
-		$conv = Encode::decode_utf8($conv)
-		    unless Encode::is_utf8($conv);
+		$utf8 .= join '', map {
+		    $chk_sub->(ord $_)
+		} split(//, $errChar);
 	    } elsif ($chk & $PERLQQ) {
-		$conv = sprintf '\x%*v02X', '\x', $errChar;
+		$utf8 .= sprintf '\x%*v02X', '\x', $errChar;
 	    } else {
-		$conv = "\x{FFFD}";
+		$utf8 .= "\x{FFFD}";
 	    }
-	    $utf8 .= $conv;
 	}
     }
     pos($str) -= length($chunk);
@@ -279,7 +278,28 @@ sub _encode {
     foreach my $ccs (@{$self->{CCS} || []}) {
 	next if $ccs->{dec_only};
 
-	my $conv = $ccs->{encoding}->encode($utf8, $FB_QUIET);
+	my $conv;
+
+	# CCS with single-shift should encode runs as short as possible.
+	# By now we support mapping from Unicode sequence up to 2 characters.
+	if (defined $ccs->{ss}) {
+	    my $bytes = $ccs->{bytes} || 1;
+	    my $mc = substr($utf8, 0, 2);
+	    $conv = $ccs->{encoding}->encode($mc, $FB_QUIET);
+	    if ($bytes < length $conv) {
+		$mc = substr($utf8, 0, 1);
+		$conv = $ccs->{encoding}->encode($mc, $FB_QUIET);
+		if (length $conv) {
+		    substr($utf8, 0, 1) = '';
+		}
+	    } elsif (length $conv == $bytes) {
+		$utf8 = $mc . substr($utf8, 2);
+	    } else {
+		undef $conv;
+	    }
+	} else {
+	    $conv = $ccs->{encoding}->encode($utf8, $FB_QUIET);
+	}
 	if (defined $conv and length $conv) {
 	    $_[1] = $utf8;
 	    return $self->designate($ccs) . $self->invoke($ccs, $conv);
@@ -332,18 +352,18 @@ sub designate {
 	} @ccs;
 
     # modify designation
-    foreach my $_ (@{$self->{_state}->{$g} || []}) {
-	delete $_->{_designated_to};
-	delete $_->{_invoked_to};
+    foreach my $ccs (@{$self->{_state}->{$g} || []}) {
+	delete $ccs->{_designated_to};
+	delete $ccs->{_invoked_to};
     }
     my %invoked = (gr => [], gl => []);
-    foreach my $_ (@ccs) {
-	$_->{_designated_to} = $g;
-	unless ($_->{ls} or $_->{ss}) {
-	    my $i = $_->{gr} ? 'gr' : 'gl';
+    foreach my $ccs (@ccs) {
+	$ccs->{_designated_to} = $g;
+	unless ($ccs->{ls} or $ccs->{ss}) {
+	    my $i = $ccs->{gr} ? 'gr' : 'gl';
 
-	    $_->{_invoked_to} = $i;
-	    push @{$invoked{$i}}, $_;
+	    $ccs->{_invoked_to} = $i;
+	    push @{$invoked{$i}}, $ccs;
 	}
     }
 
@@ -351,8 +371,8 @@ sub designate {
     foreach my $i (qw/gr gl/) {
 	next unless @{$invoked{$i} || []};
 
-	foreach my $_ (@{$self->{_state}->{$i} || []}) {
-	    delete $_->{_invoked_to};
+	foreach my $ccs (@{$self->{_state}->{$i} || []}) {
+	    delete $ccs->{_invoked_to};
 	}
 	$self->{_state}->{$i} = $invoked{$i};
     }
@@ -402,17 +422,41 @@ sub invoke {
 		not ($_->{_invoked_to} and $_->{_invoked_to} eq $i)
 	    } @ccs;
 
-	foreach my $_ (@{$self->{_state}->{$i} || []}) {
-	    delete $_->{_invoked_to};
+	foreach my $ccs (@{$self->{_state}->{$i} || []}) {
+	    delete $ccs->{_invoked_to};
 	}
-	foreach my $_ (@ccs) {
-	    $_->{_invoked_to} = $i;
+	foreach my $ccs (@ccs) {
+	    $ccs->{_invoked_to} = $i;
 	}
 
 	$self->{_state}->{$i} = [@ccs];
 	return $ccs->{ls} . $str;
     } else {
 	return $str;
+    }
+}
+
+# renew method
+
+sub renew {
+    my $self = shift;
+
+    my $clone = bless { map { _renew($_) } %$self } => ref($self);
+    $clone->{renewed}++;
+    return $clone;
+}
+
+sub _renew {
+    my $item = shift;
+
+    if (ref $item eq 'HASH') {
+	return { map { _renew($_) } %$item };
+    } elsif (ref $item eq 'ARRAY') {
+	return [ map { _renew($_) } @$item ];
+    } elsif (ref $item and $item->can("renew")) {
+	return $item->renew;
+    } else {
+	return $item;
     }
 }
 
