@@ -14,7 +14,8 @@ use Encode::KR;
 Encode::define_alias(qr/\biso-?2022-?jp-?2$/i => '"iso-2022-jp-2"');
 $Encode::Encoding{'iso-2022-jp-2'} = bless {
     'CCS' => [
-	{   encoding => $Encode::Encoding{'ascii'},
+	{   cl       => 1,
+	    encoding => $Encode::Encoding{'ascii'},
 	    g_init   => 'g0',
 	    g_seq    => "\e\x28\x42",
 	},
@@ -27,17 +28,20 @@ $Encode::Encoding{'iso-2022-jp-2'} = bless {
 	    encoding => $Encode::Encoding{'jis0208-raw'},
 	    g        => 'g0',
 	    g_seq    => "\e\x24\x42",
+	    range    => '\x21-\x7E',
 	},
 	{   bytes    => 2,
 	    dec_only => 1,
 	    encoding => $Encode::Encoding{'jis-x-0208-1978'},
 	    g        => 'g0',
 	    g_seq    => "\e\x24\x40",
+	    range    => '\x21-\x7E',
 	},
 	{   bytes    => 2,
 	    encoding => $Encode::Encoding{'jis-x-0212-ascii'},
 	    g        => 'g0',
 	    g_seq    => "\e\x24\x28\x44",
+	    range    => '\x21-\x7E',
 	},
 	# European
 	{   encoding => $Encode::Encoding{'iso-8859-1-right'},
@@ -55,12 +59,14 @@ $Encode::Encoding{'iso-2022-jp-2'} = bless {
 	    encoding => $Encode::Encoding{'gb2312-raw'},
 	    g        => 'g0',
 	    g_seq    => "\e\x24\x41",
+	    range    => '\x21-\x7E',
 	},
 	# Korean
 	{   bytes    => 2,
 	    encoding => $Encode::Encoding{'ksc5601-raw'},
 	    g        => 'g0',
 	    g_seq    => "\e\x24\x28\x43",
+	    range    => '\x21-\x7E',
 	},
 	# Nonstandard
 	{   encoding => $Encode::Encoding{'jis-x-0201-right'},
