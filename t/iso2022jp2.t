@@ -9,7 +9,7 @@ use Test::More tests => 3;
 
 BEGIN { use_ok('Encode::ISO2022JP2') };
 
-my $charset = 'iso-2022-jp-2';
+my $charset = 'iso2022jp-2';
 
 my $dir = dirname(__FILE__);
 my $src_enc = File::Spec->catfile($dir,"iso2022jp2.enc");

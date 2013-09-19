@@ -7,7 +7,7 @@ use 5.007003;
 use strict;
 use warnings;
 use base qw(Encode::Encoding);
-our $VERSION = '0.02.1';
+our $VERSION = '0.03';
 
 use Carp qw(carp croak);
 use XSLoader;
@@ -24,6 +24,41 @@ my $PERLQQ = Encode::PERLQQ();
 my $RETURN_ON_ERR = Encode::RETURN_ON_ERR();
 my $WARN_ON_ERR = Encode::WARN_ON_ERR();
 my $XMLCREF = Encode::XMLCREF();
+
+# Constructor
+
+sub Define {
+    my $pkg = shift;
+    my %opts = @_;
+
+    my $Name = $opts{Name};
+    croak 'No name defined' unless $Name;
+
+    my @CCS = @{$opts{CCS} || []};
+    croak 'No CCS defined' unless @CCS;
+    my @ccs;
+    foreach my $ccs (@CCS) {
+	my $encoding;
+	if (ref $ccs->{encoding}) {
+	    $encoding = $ccs->{encoding};
+	} elsif ($ccs->{encoding}) {
+	    $encoding = Encode::find_encoding($ccs->{encoding});
+	}
+	croak sprintf 'Unknown encoding "%s"', ($ccs->{encoding} || '')
+	    unless $encoding;
+	push @ccs, { %$ccs, encoding => $encoding };
+    }
+
+    my $self = bless {
+	CCS      => [@ccs],
+	LineInit => $opts{LineInit},
+	Name     => $Name,
+	SubChar  => ($opts{SubChar} || '?')
+    } => $pkg;
+
+    Encode::define_alias($opts{Alias} => "\"$Name\"") if $opts{Alias};
+    $Encode::Encoding{$Name} = $self;
+}
 
 # decode method
 
@@ -219,7 +254,7 @@ sub _decode {
 
 	$chunk .= $residue;
 
-	if (defined $conv and length $conv) {
+	if ($conv =~ /./os) { # length(utf8) is slow
 	    $_[1] = $chunk;
 	    $_[2] = undef;
 	    return $conv;
@@ -380,7 +415,7 @@ sub designate {
     my ($self, $ccs) = @_;
 
     my $g = $ccs->{g} || $ccs->{g_init};
-    die sprintf 'Cannot designate %s', $ccs->{encoding}->name
+    croak sprintf 'Cannot designate %s', $ccs->{encoding}->name
 	unless $g;
     my $g_seq = $ccs->{g_seq};
 
@@ -522,27 +557,33 @@ Encode::ISO2022 - ISO/IEC 2022 character encoding scheme
   package FooEncoding;
   use base qw(Encode::ISO2022);
   
-  $Encode::Encoding{'foo-encoding'} = bless {
+  __PACKAGE__->Define(
     Name => 'foo-encoding',
     CCS => [ {...CCS #1...}, {...CCS #2...}, ....]
-  } => __PACKAGE__;
+  );
 
 =head1 DESCRIPTION
 
 This module provides a character encoding scheme (CES) switching a set of
 multiple coded character sets (CCS).
 
-An instance of L<Encode::ISO2022> has following hash items.
+A class method Define() may take following arguments.
 
 =over 4
+
+=item Alias => REGEX
+
+The regular expression representing alias of this encoding, if any.
 
 =item Name => STRING
 
 The name of this encoding as L<Encode::Encoding> object.
+Mandatory.
 
 =item CCS => [ FEATURE, FEATURE, ...]
 
 List of features defining CCSs used by this encoding.
+Mandatory.
 Each item is a hash reference containing following items.
 
 =over 4
@@ -562,9 +603,9 @@ There should be one CCS with this flag to reset broken designation.
 
 If true value is set, this CCS will be used only for decoding.
 
-=item encoding => ENCODING
+=item encoding => STRING | ENCODING
 
-L<Encode::Encoding> object used as CCS.
+L<Encode::Encoding> object used as CCS, or its name.
 Mandatory.
 
 Encodings used for CCS must provide "raw" conversion.

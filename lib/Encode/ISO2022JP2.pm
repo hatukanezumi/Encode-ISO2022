@@ -2,81 +2,81 @@ package Encode::ISO2022JP2;
 
 use strict;
 use warnings;
-use base qw/Encode::ISO2022/;
-our $VERSION = '0.01';
+use base qw(Encode::ISO2022);
+our $VERSION = '0.02';
 
 use Encode::ISOIRSingle;
 use Encode::JISLegacy;
 use Encode::CN;
 use Encode::KR;
 
-Encode::define_alias(qr/\biso-?2022-?jp-?2$/i => '"iso-2022-jp-2"');
-$Encode::Encoding{'iso-2022-jp-2'} = bless {
-    'CCS' => [
+__PACKAGE__->Define(
+    Alias => qr/\biso-?2022-?jp-?2$/i,
+    Name  => 'iso-2022-jp-2',
+    CCS   => [
 	{   cl       => 1,
-	    encoding => $Encode::Encoding{'ascii'},
+	    encoding => 'ascii',
 	    g_init   => 'g0',
 	    g_seq    => "\e\x28\x42",
 	},
 	# Japanese
-	{   encoding => $Encode::Encoding{'iso-646-jp'},
+	{   encoding => 'iso-646-jp',
 	    g        => 'g0',
 	    g_seq    => "\e\x28\x4A",
 	},
 	{   bytes    => 2,
-	    encoding => $Encode::Encoding{'jis0208-raw'},
+	    encoding => 'jis0208-raw',
 	    g        => 'g0',
 	    g_seq    => "\e\x24\x42",
 	    range    => '\x21-\x7E',
 	},
 	{   bytes    => 2,
 	    dec_only => 1,
-	    encoding => $Encode::Encoding{'jis-x-0208-1978'},
+	    encoding => 'jis-x-0208-1978',
 	    g        => 'g0',
 	    g_seq    => "\e\x24\x40",
 	    range    => '\x21-\x7E',
 	},
 	{   bytes    => 2,
-	    encoding => $Encode::Encoding{'jis-x-0212-ascii'},
+	    encoding => 'jis-x-0212-ascii',
 	    g        => 'g0',
 	    g_seq    => "\e\x24\x28\x44",
 	    range    => '\x21-\x7E',
 	},
 	# European
-	{   encoding => $Encode::Encoding{'iso-8859-1-right'},
+	{   encoding => 'iso-8859-1-right',
 	    g        => 'g2',
 	    g_seq    => "\e\x2E\x41",
 	    ss       => "\e\x4E",
 	},
-	{   encoding => $Encode::Encoding{'iso-8859-7-right'},
+	{   encoding => 'iso-8859-7-right',
 	    g        => 'g2',
 	    g_seq    => "\e\x2E\x46",
 	    ss       => "\e\x4E",
 	},
 	# Chinese
 	{   bytes    => 2,
-	    encoding => $Encode::Encoding{'gb2312-raw'},
+	    encoding => 'gb2312-raw',
 	    g        => 'g0',
 	    g_seq    => "\e\x24\x41",
 	    range    => '\x21-\x7E',
 	},
 	# Korean
 	{   bytes    => 2,
-	    encoding => $Encode::Encoding{'ksc5601-raw'},
+	    encoding => 'ksc5601-raw',
 	    g        => 'g0',
 	    g_seq    => "\e\x24\x28\x43",
 	    range    => '\x21-\x7E',
 	},
 	# Nonstandard
-	{   encoding => $Encode::Encoding{'jis-x-0201-right'},
+	{   encoding => 'jis-x-0201-right',
 	    g        => 'g0',
 	    g_seq    => "\e\x28\x49",
 	},
     ],
     LineInit => 1,
-    Name     => 'iso-2022-jp-2',
     SubChar  => "\x{3013}",
-} => __PACKAGE__;
+);
 
 sub mime_name { shift->{Name} }
 
