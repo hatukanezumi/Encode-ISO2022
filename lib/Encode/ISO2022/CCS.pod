@@ -11,11 +11,12 @@ Encode::ISO2022::CCS - coded character sets for ISO/IEC 2022 character encoding 
 This document lists encoding which may be used as coded character set
 (CCS) for ISO/IEC 2022 character encoding scheme.
 
-From view of Perl, a CCS is the L<Encode::Encoding> object with stateless and
-fixed-length conversion over 94^n or 96^n code table.
+From view of Perl, a CCS is the L<Encode::Encoding> object performing
+stateless and fixed-length conversion over 94^n or 96^n code table.
 
-"reg#" column in tables below indicates the number of registry in ISO
-International Registry of Coded Character Sets [ISO-IR].
+In tables below,
+"reg#" column indicates the number of registry in
+ISO International Registry of Coded Character Sets [ISO-IR].
 
 =head2 Built-in encodings
 
@@ -148,5 +149,16 @@ I<International Register of Coded Character Sets to be Used with Escape
 Sequences>, L<http://www.itscj.ipsj.or.jp/ISO-IR/>.
 
 L<Encode>, L<Encode::ISO2022>.
+
+=head1 AUTHOR
+
+Hatuka*nezumi - IKEDA Soji, E<lt>nezumi@cpan.orgE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2013 by Hatuka*nezumi - IKEDA Soji
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
 
 =cut

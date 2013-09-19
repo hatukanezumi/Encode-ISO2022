@@ -2,8 +2,7 @@ package Encode::ISO2022JP2;
 
 use strict;
 use warnings;
-use Encode::ISO2022;
-our @ISA     = qw/Encode::ISO2022/;
+use base qw/Encode::ISO2022/;
 our $VERSION = '0.01';
 
 use Encode::ISOIRSingle;

@@ -7,7 +7,7 @@ use 5.007003;
 use strict;
 use warnings;
 use base qw(Encode::Encoding);
-our $VERSION = '0.01_00';
+our $VERSION = '0.02';
 
 use Carp qw(carp croak);
 use XSLoader;
@@ -196,8 +196,10 @@ sub _decode {
 	}
 
 	if ($ss) {
-	    $residue = substr($chunk, $bytes) . $residue;
-	    $chunk = substr($chunk, 0, $bytes);
+	    if ($bytes <= length $chunk) {
+		$residue = substr($chunk, $bytes) . $residue;
+		$chunk = substr($chunk, 0, $bytes);
+	    }
 	}
 
 	if ($ccs->{gr}) {
@@ -267,7 +269,7 @@ sub encode {
 
     $self->init_state(1);
 
-    while (length $utf8) {
+    while ($utf8 =~ /./os) { # length() on utf8 string is slow.
 	my $conv;
 
 	$conv = $self->_encode($utf8);
@@ -340,7 +342,8 @@ sub _encode {
 		    substr($utf8, 0, 1) = '';
 		}
 	    } elsif (length $conv == $bytes) {
-		$utf8 = $mc . substr($utf8, 2);
+		substr($utf8, 0, 2) = '';
+		$utf8 = $mc . $utf8;
 	    } else {
 		undef $conv;
 	    }
@@ -517,8 +520,7 @@ Encode::ISO2022 - ISO/IEC 2022 character encoding scheme
 =head1 SYNOPSIS
 
   package FooEncoding;
-  use Encode::ISO2022;
-  our @ISA = qw(Encode::ISO2022);
+  use base qw(Encode::ISO2022);
   
   $Encode::Encoding{'foo-encoding'} = bless {
     Name => 'foo-encoding',
@@ -530,7 +532,7 @@ Encode::ISO2022 - ISO/IEC 2022 character encoding scheme
 This module provides a character encoding scheme (CES) switching a set of
 multiple coded character sets (CCS).
 
-Instances of L<Encode::ISO2022> have following hash items.
+An instance of L<Encode::ISO2022> has following hash items.
 
 =over 4
 
