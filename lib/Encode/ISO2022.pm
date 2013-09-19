@@ -7,7 +7,7 @@ use 5.007003;
 use strict;
 use warnings;
 use base qw(Encode::Encoding);
-our $VERSION = '0.02';
+our $VERSION = '0.02.1';
 
 use Carp qw(carp croak);
 use XSLoader;
