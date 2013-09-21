@@ -1,18 +1,24 @@
 Revision history for Perl extension Encode::ISO2022.
 
+0.03  Sat Sep 21 2013
+
+	* Supported enc2xs.bat for MSWin32.
+	* New method Define().
+	* Became a bit faster.
+
 0.02.1  Wed Sep 18 2013
 
-    * Suppress "substr outside of string" warnings. 
+	* Suppress "substr outside of string" warnings. 
 
 0.01_00  Tue Sep 17 2013
 
-    * First beta.
+	* First beta.
 
 0.000_07  Sun Sep 15 2013
 
-    * Second CPAN upload.
+	* Second CPAN upload.
 
 0.000_06  Sun Sep 15 2013
 
-    * First CPAN upload.
+	* First CPAN upload.
 

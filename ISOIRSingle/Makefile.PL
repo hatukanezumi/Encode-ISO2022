@@ -1,6 +1,10 @@
+#-*- perl -*-
+#-*- coding: us-ascii -*-
+
 use 5.7.2;
 use strict;
 #use warnings;
+use Config;
 use ExtUtils::MakeMaker;
 use File::Spec;
 
@@ -28,11 +32,17 @@ unless ($ENV{AGGREGATE_TABLES}) {
 }
 
 my ($enc2xs, $encode_h) = ('enc2xs', '.');
+my @path_ext = ('');
+@path_ext = split(';', $ENV{PATHEXT}) if $^O eq 'MSWin32';
 PATHLOOP:
-for my $d (split /:/, $ENV{PATH}) {
-    for my $f (qw/enc2xs enc2xs5.7.3/) {
+for my $d (@Config{qw/bin sitebin vendorbin/}, 
+	(split /$Config{path_sep}/o, $ENV{PATH})){
+    for my $f (qw/enc2xs enc2xs5.7.3/){
 	my $path = File::Spec->catfile($d, $f);
-	-x $path and $enc2xs = $path and last PATHLOOP;
+	for my $ext (@path_ext) {
+	    my $bin = "$path$ext";
+	    -r "$bin" and $enc2xs = $bin and last PATHLOOP;
+	}
     }
 }
 $enc2xs or die "enc2xs not found!";

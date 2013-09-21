@@ -171,7 +171,7 @@ sub decode {
 
 	    # Maybe erroneous designation: Force invoking CL and retry.
 	    if ($errChar =~ /^[\x00-\x1F]/) {
-		my @ccs = grep { $_->{cl} } @{$self->{CCS} || []};
+		my @ccs = grep { $_->{cl} } @{$self->{CCS}};
 		if (@ccs) {
 		    $self->designate($ccs[0]);
 		    next;
@@ -208,12 +208,12 @@ sub _decode {
 	@ccs = grep {
 	    $_->{_designated_to} and
 	    $_->{ss} and $_->{ss} eq $ss
-	} @{$self->{CCS} || []};
+	} @{$self->{CCS}};
     } else {
 	@ccs = grep {
 	    $_->{_invoked_to} or
 	    not ($_->{g} or $_->{g_init} or $_->{ls} or $_->{ss})
-	} @{$self->{CCS} || []};
+	} @{$self->{CCS}};
     }
 
     foreach my $ccs (@ccs) {
@@ -254,7 +254,7 @@ sub _decode {
 
 	$chunk .= $residue;
 
-	if ($conv =~ /./os) { # length(utf8) is slow
+	if ($conv =~ /./os) { # length() on utf8 string is slow
 	    $_[1] = $chunk;
 	    $_[2] = undef;
 	    return $conv;
@@ -269,7 +269,7 @@ sub designate_dec {
 
     my $ccs = (grep {
 	$_->{g_seq} and $_->{g_seq} eq $g_seq
-    } @{$self->{CCS} || []})[0];
+    } @{$self->{CCS}})[0];
     return undef unless $ccs;
 
     return $self->designate($ccs);
@@ -281,7 +281,7 @@ sub invoke_dec {
     my $ccs = (grep {
 	$_->{_designated_to} and
 	$_->{ls} and $_->{ls} eq $ls
-    } @{$self->{CCS} || []})[0];
+    } @{$self->{CCS}})[0];
     return undef unless $ccs;
 
     return $self->invoke($ccs);
@@ -359,7 +359,7 @@ sub encode {
 sub _encode {
     my ($self, $utf8) = @_;
 
-    foreach my $ccs (@{$self->{CCS} || []}) {
+    foreach my $ccs (@{$self->{CCS}}) {
 	next if $ccs->{dec_only};
 
 	my $conv;
@@ -397,7 +397,7 @@ sub init_state {
     my ($self, $reset) = @_;
 
     if ($reset) {
-	foreach my $ccs (@{$self->{CCS} || []}) {
+	foreach my $ccs (@{$self->{CCS}}) {
 	    delete $ccs->{_designated_to};
 	    delete $ccs->{_invoked_to};
 	}
@@ -405,7 +405,7 @@ sub init_state {
     }
 
     my $ret = '';
-    foreach my $ccs (grep { $_->{g_init} } @{$self->{CCS} || []}) {
+    foreach my $ccs (grep { $_->{g_init} } @{$self->{CCS}}) {
 	$ret .= $self->designate($ccs);
     }
     return $ret;
@@ -423,12 +423,12 @@ sub designate {
     if ($g_seq) { # explicit designation
 	@ccs = grep {
 	    $_->{g_seq} and $_->{g_seq} eq $g_seq
-	} @{$self->{CCS} || []};
+	} @{$self->{CCS}};
     } else { # static designation
 	@ccs = grep {
 	    not $_->{g_seq} and
 	    ($_->{g} and $_->{g} eq $g or $_->{g_init} and $_->{g_init} eq $g)
-	} @{$self->{CCS} || []};
+	} @{$self->{CCS}};
     }
     # Already designated: do nothing
     return ''
@@ -493,13 +493,13 @@ sub invoke {
 		$_->{g_seq} and $_->{g_seq} eq $g_seq and
 		$_->{ls} and $_->{ls} eq $ls and
 		($_->{gr} ? 'gr' : 'gl') eq $i
-	    } @{$self->{CCS} || []};
+	    } @{$self->{CCS}};
 	} else {
 	    @ccs = grep {
 		not $_->{g_seq} and ($_->{g} || $_->{g_init}) eq $g and
 		$_->{ls} and $_->{ls} eq $ls and
 		($_->{gr} ? 'gr' : 'gl') eq $i
-	    } @{$self->{CCS} || []};
+	    } @{$self->{CCS}};
 	}
 	# Already invoked: add nothing
 	return $str

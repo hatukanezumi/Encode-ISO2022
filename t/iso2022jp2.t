@@ -1,4 +1,5 @@
 #-*- perl -*-
+#-*- coding: us-ascii -*-
 
 use strict;
 use warnings;

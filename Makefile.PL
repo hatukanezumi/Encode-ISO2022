@@ -1,3 +1,5 @@
+#-*- perl -*-
+#-*- coding: us-ascii -*-
 
 use 5.007003;
 use strict;
