@@ -5,10 +5,8 @@ package Encode::ISOIRSingle;
 
 use strict;
 use warnings;
-use base qw(Encode::Encoding);
 our $VERSION = '0.01';
 
-use Encode::Byte;
 use XSLoader;
 XSLoader::load(__PACKAGE__, $VERSION);
 

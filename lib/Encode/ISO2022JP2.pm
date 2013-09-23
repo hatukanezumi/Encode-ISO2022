@@ -23,6 +23,7 @@ __PACKAGE__->Define(
 	{   encoding => 'iso-646-jp',
 	    g        => 'g0',
 	    g_seq    => "\e\x28\x4A",
+	    #ss       => '', # encodes runs as short as possible.
 	},
 	{   bytes    => 2,
 	    encoding => 'jis0208-raw',
@@ -78,8 +79,6 @@ __PACKAGE__->Define(
     SubChar  => "\x{3013}",
 );
 
-sub mime_name { shift->{Name} }
-
 sub needs_lines { 1 }
 
 1;
@@ -87,7 +86,7 @@ __END__
 
 =head1 NAME
 
-Encode::ISO2022JP2 - iso-2022-jp-2, extended iso-2022-jp character set
+Encode::ISO2022JP2 - iso-2022-jp-2 - Extended iso-2022-jp character set
 
 =head1 SYNOPSIS
 

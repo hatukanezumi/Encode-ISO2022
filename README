@@ -1,92 +1,15 @@
-NAME
+Encode-ISO2022 package.
+
+Copyright (C) 2013 by Hatuka*nezumi - IKEDA Soji
+
+This program is free software; you can redistribute it and/or modify it
+under the same terms as Perl itself.
+
+                                   ***
+
+One main module and some optional modules are contained.  For more
+details read following POD documentation at first:
+
     Encode::ISO2022 - ISO/IEC 2022 character encoding scheme
 
-SYNOPSIS
-      package FooEncoding;
-      use Encode::ISO2022;
-      our @ISA = qw(Encode::ISO2022);
-  
-      $Encode::Encoding{'foo-encoding'} = bless {
-        Name => 'foo-encoding',
-        CCS => [ {...CCS #1...}, {...CCS #2...}, ....]
-      } => __PACKAGE__;
-
-DESCRIPTION
-    This module provides a character encoding scheme (CES) switching a set
-    of multiple coded character sets (CCS).
-
-    Instances of Encode::ISO2022 have following hash items.
-
-    Name => STRING
-        The name of this encoding as Encode::Encoding object.
-
-    CCS => [ FEATURE, FEATURE, ...]
-        List of features defining CCSs used by this encoding. Each item is a
-        hash reference containing following items.
-
-        bytes => NUMBER
-            Number of bytes to represent each character. Default is 1.
-
-        dec_only => BOOLEAN
-            If true value is set, this CCS will be used only for decoding.
-
-        encoding => ENCODING
-            Encode::Encoding object used as CCS. Mandatory.
-
-            Encodings used for CCS must provide "raw" conversion. Namely,
-            they must be stateless and fixed-length conversion over 94^n or
-            96^n code tables. Encode::ISO2022::CCS lists available CCSs.
-
-        gr => BOOLEAN
-            If true value is set, each character will be invoked to GR.
-
-        g => STRING
-        g_init => STRING
-            Working set this CCS may be designated to: 'g0', 'g1', 'g2' or
-            'g3'.
-
-            If "g_init" is set, this CCS will be designated at beginning of
-            coversion implicitly, and at end of conversion explicitly.
-
-            If "g" or "g_init" is set and neither of "ls" nor "ss" is not
-            set, this CCS will be invoked when it is designated.
-
-            If neither of "g", "g_init", "ls" nor "ss" is set, this CCS is
-            invoked always.
-
-        g_seq => STRING
-            Escape sequence to designate this CCS, if it can be designated
-            explicitly.
-
-        ls => STRING
-        ss => STRING
-            Escape sequence or control character to invoke this CCS, if it
-            should be invoked explicitly.
-
-            If "ss" is set, this CCS will be invoked for only one character.
-
-    LineInit => BOOLEAN
-        If it is true, designation and invokation states will be initialized
-        at beginning of lines.
-
-    SubChar => STRING
-        Unicode string to be used for substitution character.
-
-    To know more about use of this module, the source of Encode::ISO2022JP2
-    may be an example.
-
-SEE ALSO
-    ISO/IEC 2022 *Information technology - Character code structure and
-    extension techniques*.
-
-    Encode, Encode::ISO2022::CCS.
-
-AUTHOR
-    Hatuka*nezumi - IKEDA Soji, <nezumi@cpan.org>
-
-COPYRIGHT AND LICENSE
-    Copyright (C) 2013 by Hatuka*nezumi - IKEDA Soji
-
-    This program is free software; you can redistribute it and/or modify it
-    under the same terms as Perl itself.
-
+$$

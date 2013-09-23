@@ -1,5 +1,10 @@
 Revision history for Perl extension Encode::ISO2022.
 
+0.04  Mon Sep 23 2013
+
+	* New Encode::ISO2022::mime_name() returns $encoding->{Name} if the
+	  name doesn't start with "x".
+
 0.03  Sat Sep 21 2013
 
 	* Supported enc2xs.bat for MSWin32.

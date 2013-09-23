@@ -12,7 +12,7 @@ MANIFEST			This list of files
 README
 t/Encode-ISO2022.t
 t/iso2022jp2.enc
-t/iso2022jp2.t
+t/ISO2022JP2.t
 t/iso2022jp2.utf
 t/pod.t
 ucm/c1-ctrl.ucm

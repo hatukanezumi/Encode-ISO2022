@@ -7,11 +7,15 @@ use strict;
 use warnings;
 
 use base qw(Encode::Encoding);
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use Encode::JP;
 use XSLoader;
 XSLoader::load(__PACKAGE__, $VERSION);
+
+my $HTMLCREF = Encode::HTMLCREF();
+my $PERLQQ   = Encode::PERLQQ();
+my $XMLCREF  = Encode::XMLCREF();
 
 # JIS C 6226-1978, 1st revision of JIS X 0208.
 $Encode::Encoding{'jis-x-0208-1978'} = bless {
@@ -42,41 +46,45 @@ my %swap1978 = (@swap1978, reverse @swap1978);
 sub encode {
     my ($self, $utf8, $chk) = @_;
 
-    my $conv;
+    if (not ref $chk) {
+	$chk &= ~($PERLQQ | $HTMLCREF | $XMLCREF);
+    }
+    my $str;
     if ($self->{alt} eq '1978') {
-	$conv = $self->{encoding}->encode($utf8, $chk);
-	$conv =~ s{([\x21-\x7E]{2})}{$swap1978{$1} || $1}eg;
+	$str = $self->{encoding}->encode($utf8, $chk);
+	$str =~ s{([\x21-\x7E]{2})}{$swap1978{$1} || $1}eg;
     } else {
-	$conv = $self->{encoding}->encode($utf8, $chk);
+	$str = $self->{encoding}->encode($utf8, $chk);
     }
 
     $_[1] = $utf8;
-    return $conv;
+    return $str;
 }
 
 sub decode {
     my ($self, $str, $chk) = @_;
 
-    my $residue = '';
-    my $conv;
+    my $utf8;
     if ($self->{alt} eq '1978') {
 	$str =~ s{([\x21-\x7E]{2})}{$swap1978{$1} || $1}eg;
-	$conv = $self->{encoding}->decode($str, $chk);
+	$utf8 = $self->{encoding}->decode($str, $chk);
 	$str =~ s{([\x21-\x7E]{2})}{$swap1978{$1} || $1}eg;
     } else {
-	$conv = $self->{encoding}->decode($str, $chk);
+	$utf8 = $self->{encoding}->decode($str, $chk);
     }
 
-    $_[1] = $str . $residue;
-    return $conv;
+    $_[1] = $str;
+    return $utf8;
 }
+
+sub perlio_ok { 0 }
 
 1;
 __END__
 
 =head1 NAME
 
-Encode::JISLegacy - coded character sets for legacy JIS
+Encode::JISLegacy - Coded character sets for legacy JIS
 
 =head1 DESCRIPTION
 

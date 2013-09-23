@@ -8,11 +8,12 @@ Encode::ISO2022::CCS - coded character sets for ISO/IEC 2022 character encoding 
 
 =head1 DESCRIPTION
 
-This document lists encoding which may be used as coded character set
+This document lists encodings which may be used as coded character set
 (CCS) for ISO/IEC 2022 character encoding scheme.
 
 From view of Perl, a CCS is the L<Encode::Encoding> object performing
-stateless and fixed-length conversion over 94^n or 96^n code table.
+stateless and fixed-length conversion over 94^n or 96^n code table
+(By now, L<Encode::ISO2022> does not support variable length multibyte CCS).
 
 In tables below,
 "reg#" column indicates the number of registry in
@@ -123,8 +124,8 @@ About "-ascii" and "-jis" variants see documentation of module.
 
 =item *
 
-About compatible encodings taking care of characters with combning marks,
-see Encode::JISX0213.
+About compatible encodings taking care of characters with combining marks,
+see L<Encode::JISX0213::CCS>.
 
 =item *
 

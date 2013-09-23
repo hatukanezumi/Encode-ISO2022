@@ -7,7 +7,7 @@ use 5.007003;
 use strict;
 use warnings;
 use base qw(Encode::Encoding);
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use Carp qw(carp croak);
 use XSLoader;
@@ -322,7 +322,7 @@ sub encode {
 	    croak sprintf $err_encode_nomap, '}\x{', $errChar, $self->name;
 	}
 	if ($chk & $WARN_ON_ERR) {
-	    carp sprintf $err_encode_nomap, '}\x{}', $errChar, $self->name;
+	    carp sprintf $err_encode_nomap, '}\x{', $errChar, $self->name;
 	}
 	if ($chk & $RETURN_ON_ERR) {
 	    last;
@@ -545,6 +545,14 @@ sub _renew {
     }
 }
 
+# Miscelaneous
+
+sub mime_name {
+    my $self = shift;
+    return undef if $self->{Name} =~ /^x/i;
+    return uc($self->{Name});
+}
+
 1;
 __END__
 
@@ -559,7 +567,7 @@ Encode::ISO2022 - ISO/IEC 2022 character encoding scheme
   
   __PACKAGE__->Define(
     Name => 'foo-encoding',
-    CCS => [ {...CCS #1...}, {...CCS #2...}, ....]
+    CCS => [ {...CCS one...}, {...CCS two...}, ....]
   );
 
 =head1 DESCRIPTION
@@ -669,6 +677,16 @@ Unicode string to be used for substitution character.
 
 To know more about use of this module,
 the source of L<Encode::ISO2022JP2> may be an example.
+
+=head1 CAVEATS
+
+This module implements small subset of the features defined by
+ISO/IEC 2022.
+Each encoding recognizes only several predefined designation and invokation
+functions.
+It can handle limited number of coded character sets.
+Variable length multibyte coded character sets aren't supported.
+And so on.
 
 =head1 SEE ALSO
 
